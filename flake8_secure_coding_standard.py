@@ -33,14 +33,17 @@ else:  # pragma: no cover (PY38+)
 SCS100 = (
     'SCS100 use of os.path.abspath() and os.path.relpath() should be avoided in favor of ' + 'os.path.realpath()'
 )  # noqa: E501
-SCS101 = 'SCS101 eval() and exec() can represent a security risk and should be avoided'  # noqa: E501
-SCS102 = 'SCS102 use of os.system() should be avoided'  # noqa: E501
-SCS103 = 'SCS103 use of shell=True in subprocess functions should be avoided'  # noqa: E501
-SCS104 = 'SCS104 use of tempfile.mktemp() should be avoided'  # noqa: E501
-SCS105 = 'SCS105 use of yaml.load() should be avoided'  # noqa: E501
-SCS106 = 'SCS106 use of jsonpickle.decode() should be avoided'  # noqa: E501
-SCS107 = 'SCS107 debugging code shoud not be present in production code (e.g. importing pdb)'  # noqa: E501
-SCS108 = 'SCS108 assert statement should not be present in production code'  # noqa: E501
+SCS101 = 'SCS101 `eval()` and `exec()` represent a security risk and should be avoided'  # noqa: E501
+SCS102 = 'SCS102 use of `os.system()` should be avoided'  # noqa: E501
+SCS103 = 'SCS103 use of `shell=True` in subprocess functions should be avoided'  # noqa: E501
+SCS104 = 'SCS104 use of `tempfile.mktemp()` should be avoided, prefer `tempfile.mkstemp()`'  # noqa: E501
+SCS105 = (
+    'SCS105 use of `yaml.load()` should be avoided, prefer `yaml.safe_load()` or '
+    + '`yaml.load(xxx, Loader=SafeLoader)`'
+)  # noqa: E501
+SCS106 = 'SCS106 use of `jsonpickle.decode()` should be avoided'  # noqa: E501
+SCS107 = 'SCS107 debugging code shoud not be present in production code (e.g. `import pdb`)'  # noqa: E501
+SCS108 = 'SCS108 `assert` statements should not be present in production code'  # noqa: E501
 
 
 def _is_os_system_call(node: ast.Call) -> bool:

@@ -22,7 +22,10 @@ from typing import Any, Dict, Generator, List, Tuple, Type
 
 if sys.version_info < (3, 8):  # pragma: no cover (<PY38)
     import importlib_metadata  # pylint: disable=E0401
+
+    ast_Constant = ast.NameConstant
 else:  # pragma: no cover (PY38+)
+    ast_Constant = ast.Constant
     import importlib.metadata as importlib_metadata
 
 # ==============================================================================
@@ -72,10 +75,10 @@ def _is_subprocess_shell_true_call(node: ast.Call) -> bool:
         and node.func.value.id in ('subprocess', 'sp')
     ):
         for keyword in node.keywords:
-            if keyword.arg == 'shell' and isinstance(keyword.value, ast.Constant) and bool(keyword.value.value):
+            if keyword.arg == 'shell' and isinstance(keyword.value, ast_Constant) and bool(keyword.value.value):
                 return True
 
-        if len(node.args) > 8 and isinstance(node.args[8], ast.Constant) and bool(node.args[8].value):
+        if len(node.args) > 8 and isinstance(node.args[8], ast_Constant) and bool(node.args[8].value):
             return True
     return False
 

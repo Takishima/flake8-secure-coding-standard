@@ -1,6 +1,7 @@
 # Flake8 Secure Coding Standard Plugin
 
-[![PyPI version](https://badge.fury.io/py/flake8-secure-coding-standard.svg)](https://badge.fury.io/py/flake8-secure-coding-standard) ![CI Build](https://github.com/Takishima/flake8-secure-coding-standard/actions/workflows/ci.yml/badge.svg) ![CodeQL](https://github.com/Takishima/flake8-secure-coding-standard/actions/workflows/codeql-analysis.yml/badge.svg)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/flake8-secure-coding-standard?label=Python) [![PyPI version](https://badge.fury.io/py/flake8-secure-coding-standard.svg)](https://badge.fury.io/py/flake8-secure-coding-standard) [![CI Build](https://github.com/Takishima/flake8-secure-coding-standard/actions/workflows/ci.yml/badge.svg)](https://github.com/Takishima/flake8-secure-coding-standard/actions/workflows/ci.yml) [![CodeQL](https://github.com/Takishima/flake8-secure-coding-standard/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/Takishima/flake8-secure-coding-standard/actions/workflows/codeql-analysis.yml) [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/Takishima/flake8-secure-coding-standard/main.svg)](https://results.pre-commit.ci/latest/github/Takishima/flake8-secure-coding-standard/main)
+
 
 flake8 plugin that enforces some secure coding standards.
 

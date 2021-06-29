@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Added SCS109 to prefer `os.open()` to the builtin `open` when in writing mode
+
 ### Repository
 
-- Update pre-commit configuration
+-   Update pre-commit configuration
 
 ## [1.0.1] - 2021-06-21
 
@@ -22,8 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release
 
-[Unreleased]: https://github.com/Takishima/flake8-secure-coding-standard/compare/1.0.1...HEAD
+[Unreleased]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.0.1...HEAD
 
-[1.0.1]: https://github.com/Takishima/flake8-secure-coding-standard/compare/1.0.0...1.0.1
+[1.0.1]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.0.0...v1.0.1
 
-[1.0.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/c18cc7130a40405bd92e49b22675e8ddbe0bc8cd...1.0.0
+[1.0.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/c18cc7130a40405bd92e49b22675e8ddbe0bc8cd...v1.0.0

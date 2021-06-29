@@ -44,6 +44,10 @@ SCS105 = (
 SCS106 = 'SCS106 use of `jsonpickle.decode()` should be avoided'  # noqa: E501
 SCS107 = 'SCS107 debugging code shoud not be present in production code (e.g. `import pdb`)'  # noqa: E501
 SCS108 = 'SCS108 `assert` statements should not be present in production code'  # noqa: E501
+SCS109 = (
+    'SCS109 Use of builtin `open` for writing is discouraged in favor of `os.open` '
+    + 'to allow for setting file permissions'
+)  # noqa: E501
 
 
 def _is_os_system_call(node: ast.Call) -> bool:
@@ -69,6 +73,32 @@ def _is_os_path_call(node: ast.Call) -> bool:
         )
         and node.func.attr in ('abspath', 'relpath')
     )
+
+
+def _is_builtin_open_for_writing(node: ast.Call) -> bool:
+    if isinstance(node.func, ast.Name) and node.func.id == 'open':
+        mode = ''
+        if len(node.args) > 1:
+            if isinstance(node.args[1], ast.Name):
+                return True  # variable -> to be on the safe side, flag as inappropriate
+            if isinstance(node.args[1], ast_Constant):
+                mode = node.args[1].value
+            if isinstance(node.args[1], ast.Str):
+                mode = node.args[1].s
+        else:
+            for keyword in node.keywords:
+                if keyword.arg == 'mode':
+                    if not isinstance(keyword.value, ast_Constant):
+                        return True  # variable -> to be on the safe side, flag as inappropriate
+                    mode = keyword.value.value
+                    break
+        if any(m in mode for m in 'awx'):
+            # open(..., "w")
+            # open(..., "wb")
+            # open(..., "a")
+            # open(..., "x")
+            return True
+    return False
 
 
 def _is_subprocess_shell_true_call(node: ast.Call) -> bool:
@@ -175,6 +205,8 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS100))
         elif _is_subprocess_shell_true_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS103))
+        elif _is_builtin_open_for_writing(node):
+            self.errors.append((node.lineno, node.col_offset, SCS109))
         elif isinstance(node.func, ast.Name) and (node.func.id in ('eval', 'exec')):
             self.errors.append((node.lineno, node.col_offset, SCS101))
         self.generic_visit(node)
@@ -211,6 +243,14 @@ class Visitor(ast.NodeVisitor):
                 self.errors.append((node.lineno, node.col_offset, SCS102))
 
         self.generic_visit(node)
+
+    def visit_With(self, node: ast.With) -> None:
+        """
+        Visitor method called for ast.With nodes
+        """
+        for item in node.items:
+            if isinstance(item.context_expr, ast.Call) and _is_builtin_open_for_writing(item.context_expr):
+                self.errors.append((node.lineno, node.col_offset, SCS109))
 
     def visit_Assert(self, node: ast.Assert) -> None:
         """

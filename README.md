@@ -11,20 +11,20 @@ flake8 plugin that enforces some secure coding standards.
 
 ## Flake8 codes
 
-| Code   | Description                                                                                                  |
-|--------|--------------------------------------------------------------------------------------------------------------|
-| SCS100 | Use of `os.path.abspath()` and `os.path.relpath()` should be avoided in favor of `os.path.realpath()`        |
-| SCS101 | Use of `eval()` and `exec()` represent a security risk and should be avoided                                 |
-| SCS102 | Use of `os.system()` should be avoided                                                                       |
-| SCS103 | Use of `shell=True` in subprocess functions should be avoided                                                |
-| SCS104 | Use of `tempfile.mktemp()` should be avoided, prefer `tempfile.mkstemp()`                                    |
-| SCS105 | Use of `yaml.load()` should be avoided, prefer `yaml.safe_load()` or `yaml.load(xxx, Loader=SafeLoader)`     |
-| SCS106 | Use of `jsonpickle.decode()` should be avoided                                                               |
-| SCS107 | Use of debugging code shoud not be present in production code (e.g. `import pdb`)                            |
-| SCS108 | `assert` statements should not be present in production code                                                 |
-| SCS109 | Use of builtin `open` for writing is discouraged in favor of `os.open` to allow for setting file permissions |
-| SCS110 | Avoid using `os.popen()` as it internally uses `subprocess.Popen` with `shell=True`                          |
-| SCS111 | Use of `shlex.quote()` should be avoided on non-POSIX platforms                                              |
+| Code   | Description                                                                                                   |
+|--------|---------------------------------------------------------------------------------------------------------------|
+| SCS100 | Use of `os.path.abspath()` and `os.path.relpath()` should be avoided in favor of `os.path.realpath()`         |
+| SCS101 | Use of `eval()` and `exec()` represent a security risk and should be avoided                                  |
+| SCS102 | Use of `os.system()` should be avoided                                                                        |
+| SCS103 | Use of `shell=True` in subprocess functions or use of functions that internally set this should be avoided    |
+| SCS104 | Use of `tempfile.mktemp()` should be avoided, prefer `tempfile.mkstemp()`                                     |
+| SCS105 | Use of `yaml.load()` should be avoided, prefer `yaml.safe_load()` or `yaml.load(xxx, Loader=SafeLoader)`      |
+| SCS106 | Use of `jsonpickle.decode()` should be avoided                                                                |
+| SCS107 | Use of debugging code shoud not be present in production code (e.g. `import pdb`)                             |
+| SCS108 | `assert` statements should not be present in production code                                                  |
+| SCS109 | Use of builtin `open` for writing is discouraged in favor of `os.open` to allow for setting file permissions  |
+| SCS110 | Avoid using `os.popen()` as it internally uses `subprocess.Popen` with `shell=True`                           |
+| SCS111 | Use of `shlex.quote()` should be avoided on non-POSIX platforms                                               |
 
 ## Pre-commit hook
 
@@ -33,7 +33,7 @@ See [pre-commit](https://github.com/pre-commit/pre-commit) for instructions
 Sample `.pre-commit-config.yaml`:
 
 ```yaml
--   repo: https://github.com/PyCQA/flake8
+-   repo: https://github.com/PyCQA/flake8g
     rev: 3.7.8
     hooks:
     -   id: flake8

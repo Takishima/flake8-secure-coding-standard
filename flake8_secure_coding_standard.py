@@ -20,38 +20,43 @@ import platform
 import sys
 from typing import Any, Dict, Generator, List, Tuple, Type
 
-if sys.version_info < (3, 8):  # pragma: no cover (<PY38)
+if sys.version_info < (3, 8):  # pragma: no cover
     import importlib_metadata  # pylint: disable=E0401
 
     ast_Constant = ast.NameConstant  # pylint: disable=invalid-name
-else:  # pragma: no cover (PY38+)
+else:  # pragma: no cover
     ast_Constant = ast.Constant
     import importlib.metadata as importlib_metadata
 
 # ==============================================================================
 
-SCS100 = (
-    'SCS100 use of os.path.abspath() and os.path.relpath() should be avoided in favor of ' + 'os.path.realpath()'
-)  # noqa: E501
-SCS101 = 'SCS101 `eval()` and `exec()` represent a security risk and should be avoided'  # noqa: E501
-SCS102 = 'SCS102 use of `os.system()` should be avoided'  # noqa: E501
-SCS103 = 'SCS103 use of `shell=True` in subprocess functions should be avoided'  # noqa: E501
-SCS104 = 'SCS104 use of `tempfile.mktemp()` should be avoided, prefer `tempfile.mkstemp()`'  # noqa: E501
-SCS105 = (
-    'SCS105 use of `yaml.load()` should be avoided, prefer `yaml.safe_load()` or '
-    + '`yaml.load(xxx, Loader=SafeLoader)`'
-)  # noqa: E501
-SCS106 = 'SCS106 use of `jsonpickle.decode()` should be avoided'  # noqa: E501
-SCS107 = 'SCS107 debugging code shoud not be present in production code (e.g. `import pdb`)'  # noqa: E501
-SCS108 = 'SCS108 `assert` statements should not be present in production code'  # noqa: E501
-SCS109 = (
-    'SCS109 Use of builtin `open` for writing is discouraged in favor of `os.open` '
-    + 'to allow for setting file permissions'
-)  # noqa: E501
-SCS110 = (
-    'Use of `os.popen()` should be avoided, as it internally uses `subprocess.Popen` with `shell=True`'  # noqa: E501
+SCS100 = 'SCS100 use of os.path.abspath() and os.path.relpath() should be avoided in favor of os.path.realpath()'
+SCS101 = 'SCS101 `eval()` and `exec()` represent a security risk and should be avoided'
+SCS102 = 'SCS102 use of `os.system()` should be avoided'
+SCS103 = ' '.join(
+    [
+        'SCS103 use of `shell=True` in subprocess functions or use of functions that internally set it should be',
+        'avoided',
+    ]
 )
-SCS111 = 'Use of `shlex.quote()` should be avoided on non-POSIX platforms (such as Windows)'  # noqa: E501
+SCS104 = 'SCS104 use of `tempfile.mktemp()` should be avoided, prefer `tempfile.mkstemp()`'
+SCS105 = ' '.join(
+    [
+        'SCS105 use of `yaml.load()` should be avoided, prefer `yaml.safe_load()` or',
+        '`yaml.load(xxx, Loader=SafeLoader)`',
+    ]
+)
+SCS106 = 'SCS106 use of `jsonpickle.decode()` should be avoided'
+SCS107 = 'SCS107 debugging code shoud not be present in production code (e.g. `import pdb`)'
+SCS108 = 'SCS108 `assert` statements should not be present in production code'
+SCS109 = ' '.join(
+    [
+        'SCS109 Use of builtin `open` for writing is discouraged in favor of `os.open` to allow for setting file',
+        'permissions',
+    ]
+)
+SCS110 = 'Use of `os.popen()` should be avoided, as it internally uses `subprocess.Popen` with `shell=True`'
+SCS111 = 'Use of `shlex.quote()` should be avoided on non-POSIX platforms (such as Windows)'
 
 
 # ==============================================================================
@@ -129,18 +134,27 @@ def _is_builtin_open_for_writing(node: ast.Call) -> bool:
     return False
 
 
-def _is_subprocess_shell_true_call(node: ast.Call) -> bool:
-    if (
-        isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id in ('subprocess', 'sp')
-    ):
-        for keyword in node.keywords:
-            if keyword.arg == 'shell' and isinstance(keyword.value, ast_Constant) and bool(keyword.value.value):
-                return True
+def _is_shell_true_call(node: ast.Call) -> bool:
+    if not (isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name)):
+        return False
 
-        if len(node.args) > 8 and isinstance(node.args[8], ast_Constant) and bool(node.args[8].value):
+    # subprocess module
+    if node.func.value.id in ('subprocess', 'sp'):
+        if node.func.attr in ('call', 'check_call', 'check_output', 'Popen', 'run'):
+            for keyword in node.keywords:
+                if keyword.arg == 'shell' and isinstance(keyword.value, ast_Constant) and bool(keyword.value.value):
+                    return True
+            if len(node.args) > 8 and isinstance(node.args[8], ast_Constant) and bool(node.args[8].value):
+                return True
+        if node.func.attr in ('getoutput', 'getstatusoutput'):
             return True
+
+    # asyncio module
+    if (node.func.value.id == 'asyncio' and node.func.attr == 'create_subprocess_shell') or (
+        node.func.value.id == 'loop' and node.func.attr == 'subprocess_shell'
+    ):
+        return True
+
     return False
 
 
@@ -254,7 +268,7 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS100))
         elif _is_os_popen_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS110))
-        elif _is_subprocess_shell_true_call(node):
+        elif _is_shell_true_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS103))
         elif _is_builtin_open_for_writing(node):
             self.errors.append((node.lineno, node.col_offset, SCS109))
@@ -292,6 +306,14 @@ class Visitor(ast.NodeVisitor):
                 #  * from os.path import relpath, abspath
                 #  * import os.path as op; from op import relpath, abspath
                 self.errors.append((node.lineno, node.col_offset, SCS100))
+            elif (node.module == 'subprocess' and alias.name in ('getoutput', 'getstatusoutput')) or (
+                (node.module == 'asyncio' and alias.name == 'create_subprocess_shell')
+            ):
+                # Cover:
+                # * from subprocess import getoutput
+                # * from subprocess import getstatusoutput
+                # * from asyncio import create_subprocess_shell
+                self.errors.append((node.lineno, node.col_offset, SCS103))
             elif node.module == 'os' and alias.name == 'system':
                 # Cover:
                 # * from os import system

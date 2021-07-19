@@ -16,13 +16,14 @@
 """Main file for the flake8_secure_coding_standard plugin."""
 
 import ast
+import platform
 import sys
 from typing import Any, Dict, Generator, List, Tuple, Type
 
 if sys.version_info < (3, 8):  # pragma: no cover (<PY38)
     import importlib_metadata  # pylint: disable=E0401
 
-    ast_Constant = ast.NameConstant
+    ast_Constant = ast.NameConstant  # pylint: disable=invalid-name
 else:  # pragma: no cover (PY38+)
     ast_Constant = ast.Constant
     import importlib.metadata as importlib_metadata
@@ -47,6 +48,24 @@ SCS109 = (
     'SCS109 Use of builtin `open` for writing is discouraged in favor of `os.open` '
     + 'to allow for setting file permissions'
 )  # noqa: E501
+SCS110 = (
+    'Use of `os.popen()` should be avoided, as it internally uses `subprocess.Popen` with `shell=True`'  # noqa: E501
+)
+SCS111 = 'Use of `shlex.quote()` should be avoided on non-POSIX platforms (such as Windows)'  # noqa: E501
+
+
+# ==============================================================================
+# Helper functions
+
+
+def _is_posix():
+    """Return True if the current system is POSIX-compatible."""
+    # NB: we could simply use `os.name` instead of `platform.system()`. However, that solution would be difficult to
+    #     test using `mock` as a few modules (like `pytest`) actually use it internally...
+    return platform.system() in ('Linux', 'Darwin')
+
+
+# ==============================================================================
 
 
 def _is_os_system_call(node: ast.Call) -> bool:
@@ -55,6 +74,15 @@ def _is_os_system_call(node: ast.Call) -> bool:
         and isinstance(node.func.value, ast.Name)
         and node.func.value.id == 'os'
         and node.func.attr == 'system'
+    )
+
+
+def _is_os_popen_call(node: ast.Call) -> bool:
+    return (
+        isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == 'os'
+        and node.func.attr == 'popen'
     )
 
 
@@ -193,6 +221,15 @@ def _is_jsonpickle_encode_call(node: ast.Call) -> bool:
     return False
 
 
+def _is_shlex_quote_call(node: ast.Call) -> bool:
+    return not _is_posix() and (
+        isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == 'shlex'
+        and node.func.attr == 'quote'
+    )
+
+
 class Visitor(ast.NodeVisitor):
     """AST visitor class for the plugin."""
 
@@ -215,12 +252,17 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS102))
         elif _is_os_path_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS100))
+        elif _is_os_popen_call(node):
+            self.errors.append((node.lineno, node.col_offset, SCS110))
         elif _is_subprocess_shell_true_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS103))
         elif _is_builtin_open_for_writing(node):
             self.errors.append((node.lineno, node.col_offset, SCS109))
         elif isinstance(node.func, ast.Name) and (node.func.id in ('eval', 'exec')):
             self.errors.append((node.lineno, node.col_offset, SCS101))
+        elif _is_shlex_quote_call(node):
+            self.errors.append((node.lineno, node.col_offset, SCS111))
+
         self.generic_visit(node)
 
     def visit_Import(self, node: ast.Import) -> None:
@@ -254,6 +296,15 @@ class Visitor(ast.NodeVisitor):
                 # Cover:
                 # * from os import system
                 self.errors.append((node.lineno, node.col_offset, SCS102))
+            elif node.module == 'os' and alias.name == 'popen':
+                # Cover:
+                # * from os import popen
+                self.errors.append((node.lineno, node.col_offset, SCS110))
+            elif not _is_posix() and node.module == 'shlex' and alias.name == 'quote':
+                # Cover:
+                # * from shlex import quote
+                # * from shlex import quote as quoted
+                self.errors.append((node.lineno, node.col_offset, SCS111))
 
         self.generic_visit(node)
 

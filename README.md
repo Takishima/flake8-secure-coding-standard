@@ -23,6 +23,8 @@ flake8 plugin that enforces some secure coding standards.
 | SCS107 | Use of debugging code shoud not be present in production code (e.g. `import pdb`)                            |
 | SCS108 | `assert` statements should not be present in production code                                                 |
 | SCS109 | Use of builtin `open` for writing is discouraged in favor of `os.open` to allow for setting file permissions |
+| SCS110 | Avoid using `os.popen()` as it internally uses `subprocess.Popen` with `shell=True`                          |
+| SCS111 | Use of `shlex.quote()` should be avoided on non-POSIX platforms                                              |
 
 ## Pre-commit hook
 

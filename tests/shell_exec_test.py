@@ -55,6 +55,8 @@ def test_shell_exec_ok(s):
         ('os.system("ls -l")', flake8_scs.SCS102),
         ('from os import system', flake8_scs.SCS102),
         ('from os import system as os_system', flake8_scs.SCS102),
+        ('from os import popen', flake8_scs.SCS110),
+        ('from os import popen as os_popen', flake8_scs.SCS110),
         ('subprocess.Popen(["cat", "/etc/passwd"], b, e, i, o, e, pre, c, True)', flake8_scs.SCS103),
         ('subprocess.Popen(["cat", "/etc/passwd"], b, e, i, o, e, pre, c, True, cwd)', flake8_scs.SCS103),
         ('subprocess.run(["cat", "/etc/passwd"], shell=True)', flake8_scs.SCS103),
@@ -65,6 +67,12 @@ def test_shell_exec_ok(s):
         ('sp.check_call(["cat", "/etc/passwd"], shell=True)', flake8_scs.SCS103),
         ('subprocess.check_output(["cat", "/etc/passwd"], shell=True)', flake8_scs.SCS103),
         ('sp.check_output(["cat", "/etc/passwd"], shell=True)', flake8_scs.SCS103),
+        ('os.popen("cat")', flake8_scs.SCS110),
+        ('os.popen("cat", "r")', flake8_scs.SCS110),
+        ('os.popen("cat", "r", 1)', flake8_scs.SCS110),
+        ('os.popen("cat", buffering=1)', flake8_scs.SCS110),
+        ('os.popen("cat", mode="w")', flake8_scs.SCS110),
+        ('os.popen("cat", mode="w", buffering=1)', flake8_scs.SCS110),
     ),
 )
 def test_shell_exec_not_ok(s, msg_id):

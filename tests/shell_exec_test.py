@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import ast
+
 import pytest
 
 import flake8_secure_coding_standard as flake8_scs

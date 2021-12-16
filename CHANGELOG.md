@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Update pre-commit hooks
 -   Update `isort` hook to v5.10.1
--   Update `black` hook to v21.11b1
+-   Update `black` hook to v21.12b0
 -   Update `check-manifest` hook to v0.47
 -   Update `flake8` hook to v4.0.1
 -   Update `thomaseizinger/create-pull-request` GiHub action to v1.3.0

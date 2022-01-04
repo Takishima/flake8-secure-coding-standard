@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Repository
 
--   Update pre-commit hooks
+-   Update `dangoslen/changelog-enforcer` GitHub action to v3
 -   Update `isort` hook to v5.10.1
 -   Update `black` hook to v21.12b0
 -   Update `check-manifest` hook to v0.47

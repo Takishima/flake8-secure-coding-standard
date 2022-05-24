@@ -29,6 +29,9 @@ flake8 plugin that enforces some secure coding standards.
 | SCS113 | Avoid using `pickle.load()` and `pickle.loads()`                                                              |
 | SCS114 | Avoid using `marshal.load()` and `marshal.loads()`                                                            |
 | SCS115 | Avoid using `shelve.open()`                                                                                   |
+| SCS116 | Avoid using `os.mkdir` and `os.makedirs` with unsafe file permissions                                         |
+| SCS117 | Avoid using `os.mkfifo` with unsafe file permissions                                                          |
+| SCS118 | Avoid using `os.mknod` with unsafe file permissions                                                           |
 
 
 ### Mode-like options

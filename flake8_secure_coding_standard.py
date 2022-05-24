@@ -68,6 +68,9 @@ SCS112 = 'Avoid using `os.open` with unsafe permissions (should be {})'
 SCS113 = 'Avoid using `pickle.load()` and `pickle.loads()`'
 SCS114 = 'Avoid using `marshal.load()` and `marshal.loads()`'
 SCS115 = 'Avoid using `shelve.open()`'
+SCS116 = 'Avoid using `os.mkdir` and `os.makedirs` with unsafe file permissions (should be {})'
+SCS117 = 'Avoid using `os.mkfifo` with unsafe file permissions (should be {})'
+SCS118 = 'Avoid using `os.mknod` with unsafe file permissions (should be {})'
 
 
 # ==============================================================================
@@ -144,6 +147,8 @@ def _is_posix():
     #     test using `mock` as a few modules (like `pytest`) actually use it internally...
     return platform.system() in ('Linux', 'Darwin')
 
+
+_is_unix = _is_posix
 
 # ------------------------------------------------------------------------------
 
@@ -339,11 +344,20 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
 class Visitor(ast.NodeVisitor):
     """AST visitor class for the plugin."""
 
+    os_mkdir_modes_allowed = []
+    os_mkdir_modes_msg_arg = ''
+    os_mkfifo_modes_allowed = []
+    os_mkfifo_modes_msg_arg = ''
+    os_mknod_modes_allowed = []
+    os_mknod_modes_msg_arg = ''
     os_open_modes_allowed = []
     os_open_modes_msg_arg = ''
 
     mode_msg_map = {
         SCS112: 'open',
+        SCS116: 'mkdir',
+        SCS117: 'mkfifo',
+        SCS118: 'mknod',
     }
 
     @classmethod
@@ -391,6 +405,25 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS114))
         elif _is_function_call(node, module='shelve', function='open'):
             self.errors.append((node.lineno, node.col_offset, SCS115))
+        elif _is_unix():
+            if (
+                _is_function_call(node, module='os', function=('mkdir', 'makedirs'))
+                and self.os_mkdir_modes_allowed
+                and not _is_allowed_mode(node, self.os_mkdir_modes_allowed, args_idx=1)
+            ):
+                self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS116)))
+            elif (
+                _is_function_call(node, module='os', function='mkfifo')
+                and self.os_mkfifo_modes_allowed
+                and not _is_allowed_mode(node, self.os_mkfifo_modes_allowed, args_idx=1)
+            ):
+                self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS117)))
+            elif (
+                _is_function_call(node, module='os', function='mknod')
+                and self.os_mknod_modes_allowed
+                and not _is_allowed_mode(node, self.os_mknod_modes_allowed, args_idx=1)
+            ):
+                self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS118)))
 
         self.generic_visit(node)
 
@@ -490,6 +523,36 @@ class Plugin:  # pylint: disable=R0903
     @classmethod
     def add_options(cls, option_manager: flake8.options.manager.OptionManager) -> None:
         option_manager.add_option(
+            "--os-mkdir-mode",
+            action='callback',
+            callback=octal_mode_option_callback,
+            type=str,
+            parse_from_config=True,
+            default=False,
+            dest="os_mkdir_mode",
+            help="If provided, configure how 'mode' paramter of the os.mkdir() function are handled",
+        )
+        option_manager.add_option(
+            "--os-mkfifo-mode",
+            action='callback',
+            callback=octal_mode_option_callback,
+            type=str,
+            parse_from_config=True,
+            default=False,
+            dest="os_mkfifo_mode",
+            help="If provided, configure how 'mode' paramter of the os.mkfifo() function are handled",
+        )
+        option_manager.add_option(
+            "--os-mknod-mode",
+            action='callback',
+            callback=octal_mode_option_callback,
+            type=str,
+            parse_from_config=True,
+            default=False,
+            dest="os_mknod_mode",
+            help="If provided, configure how 'mode' paramter of the os.mknod() function are handled",
+        )
+        option_manager.add_option(
             "--os-open-mode",
             action='callback',
             callback=octal_mode_option_callback,
@@ -512,6 +575,9 @@ class Plugin:  # pylint: disable=R0903
             else:
                 getattr(Visitor, f'os_{name}_modes_allowed').clear()
 
+        _set_mode_option('mkdir', options.os_mkdir_mode)
+        _set_mode_option('mkfifo', options.os_mkfifo_mode)
+        _set_mode_option('mknod', options.os_mknod_mode)
         _set_mode_option('open', options.os_open_mode)
 
     def run(self) -> Generator[Tuple[int, int, str, Type[Any]], None, None]:

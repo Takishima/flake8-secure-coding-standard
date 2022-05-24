@@ -15,7 +15,6 @@
 
 """Main file for the flake8_secure_coding_standard plugin."""
 
-import argparse
 import ast
 import operator
 import optparse
@@ -35,6 +34,8 @@ else:  # pragma: no cover
     import importlib.metadata as importlib_metadata
 
 # ==============================================================================
+
+_DEFAULT_MAX_MODE = 0o755
 
 SCS100 = 'SCS100 use of os.path.abspath() and os.path.relpath() should be avoided in favor of os.path.realpath()'
 SCS101 = 'SCS101 `eval()` and `exec()` represent a security risk and should be avoided'
@@ -63,6 +64,7 @@ SCS109 = ' '.join(
 )
 SCS110 = 'Use of `os.popen()` should be avoided, as it internally uses `subprocess.Popen` with `shell=True`'
 SCS111 = 'Use of `shlex.quote()` should be avoided on non-POSIX platforms (such as Windows)'
+SCS112 = 'Avoid using `os.open` with unsafe permissions (should be {})'
 SCS113 = 'Avoid using `pickle.load()` and `pickle.loads()`'
 SCS114 = 'Avoid using `marshal.load()` and `marshal.loads()`'
 SCS115 = 'Avoid using `shelve.open()`'
@@ -70,6 +72,70 @@ SCS115 = 'Avoid using `shelve.open()`'
 
 # ==============================================================================
 # Helper functions
+
+
+def _read_octal_mode_option(name, value, default):
+    """
+    Read an integer or list of integer configuration option.
+
+    Args:
+        name (str): Name of option
+        value (str): Value of option from the configuration file or on the CLI. Its value can be any of:
+            - 'yes', 'y', 'true' (case-insensitive)
+                The maximum mode value is then set to self.DEFAULT_MAX_MODE
+            - a single octal or decimal integer
+                The maximum mode value is then set to that integer value
+            - a comma-separated list of integers (octal or decimal)
+                The allowed mode values are then those found in the list
+            - anything else will count as a falseful value
+        default (int,list): Default value for option if set to one of
+            ('y', 'yes', 'true') in the configuration file or on the CLI
+
+    Returns:
+        A single integer or a (possibly empty) list of integers
+
+    Raises:
+        ValueError: if the value of the option is not valid
+    """
+
+    def _str_to_int(arg):
+        try:
+            return int(arg, 8)
+        except ValueError:
+            return int(arg)
+
+    value = value.lower()
+    modes = [mode.strip() for mode in value.split(',')]
+
+    if len(modes) > 1:
+        # Lists of allowed modes
+        try:
+            allowed_modes = [_str_to_int(mode) for mode in modes if mode]
+        except ValueError as error:
+            raise ValueError(f'Unable to convert {modes} elements to integers!') from error
+        else:
+            if not allowed_modes:
+                raise ValueError(f'Calculated empty value for `{name}`!')
+            return allowed_modes
+    elif modes and modes[0]:
+        # Single values (ie. max allowed value for mode)
+        try:
+            return _str_to_int(value)
+        except ValueError as error:
+            if value in ('y', 'yes', 'true'):
+                return default
+            if value in ('n', 'no', 'false'):
+                return None
+            raise ValueError(f'Invalid value for `{name}`: {value}!') from error
+    else:
+        raise ValueError(f'Invalid value for `{name}`: {value}!')
+
+
+def octal_mode_option_callback(option, opt, value, parser):
+    setattr(parser.values, f'{option.dest}', _read_octal_mode_option(option.dest, value, _DEFAULT_MAX_MODE))
+
+
+# ==============================================================================
 
 
 def _is_posix():
@@ -137,6 +203,27 @@ def _is_builtin_open_for_writing(node: ast.Call) -> bool:
             #  * open(..., "x")
             return True
     return False
+
+
+def _get_mode_arg(node, args_idx):
+    mode = None
+    if len(node.args) > args_idx and isinstance(node.args[args_idx], ast_Constant):
+        mode = node.args[args_idx].value
+    elif node.keywords:
+        for keyword in node.keywords:
+            if keyword.arg == 'mode' and isinstance(keyword.value, ast_Constant):
+                mode = keyword.value.value
+                break
+    return mode
+
+
+def _is_allowed_mode(node, allowed_modes, args_idx):
+    mode = _get_mode_arg(node, args_idx=args_idx)
+    if mode is not None and allowed_modes:
+        return mode in allowed_modes
+
+    # NB: default to True in all other cases
+    return True
 
 
 def _is_shell_true_call(node: ast.Call) -> bool:
@@ -252,6 +339,17 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
 class Visitor(ast.NodeVisitor):
     """AST visitor class for the plugin."""
 
+    os_open_modes_allowed = []
+    os_open_modes_msg_arg = ''
+
+    mode_msg_map = {
+        SCS112: 'open',
+    }
+
+    @classmethod
+    def format_mode_msg(cls, msg_id):
+        return msg_id.format(getattr(cls, f'os_{cls.mode_msg_map[msg_id]}_modes_msg_arg'))
+
     def __init__(self) -> None:
         """Initialize a Visitor object."""
         self.errors: List[Tuple[int, int, str]] = []
@@ -281,6 +379,12 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS101))
         elif not _is_posix() and _is_function_call(node, module='shlex', function='quote'):
             self.errors.append((node.lineno, node.col_offset, SCS111))
+        elif (
+            _is_function_call(node, module='os', function='open')
+            and self.os_open_modes_allowed
+            and not _is_allowed_mode(node, self.os_open_modes_allowed, args_idx=2)
+        ):
+            self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS112)))
         elif _is_function_call(node, module='pickle', function=('load', 'loads')):
             self.errors.append((node.lineno, node.col_offset, SCS113))
         elif _is_function_call(node, module='marshal', function=('load', 'loads')):
@@ -360,6 +464,10 @@ class Visitor(ast.NodeVisitor):
             if isinstance(item.context_expr, ast.Call):
                 if _is_builtin_open_for_writing(item.context_expr):
                     self.errors.append((node.lineno, node.col_offset, SCS109))
+                elif _is_function_call(item.context_expr, module='os', function='open') and not _is_allowed_mode(
+                    item.context_expr, self.os_open_modes_allowed, args_idx=2
+                ):
+                    self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS112)))
                 elif _is_function_call(item.context_expr, module='shelve', function='open'):
                     self.errors.append((node.lineno, node.col_offset, SCS115))
 
@@ -378,6 +486,33 @@ class Plugin:  # pylint: disable=R0903
     def __init__(self, tree: ast.AST):
         """Initialize a Plugin object."""
         self._tree = tree
+
+    @classmethod
+    def add_options(cls, option_manager: flake8.options.manager.OptionManager) -> None:
+        option_manager.add_option(
+            "--os-open-mode",
+            action='callback',
+            callback=octal_mode_option_callback,
+            type=str,
+            parse_from_config=True,
+            default=False,
+            dest="os_open_mode",
+            help="If provided, configure how 'mode' paramter of the os.open() function are handled",
+        )
+
+    @classmethod
+    def parse_options(cls, options: optparse.Values) -> None:
+        def _set_mode_option(name, modes):
+            if isinstance(modes, int) and modes > 0:
+                setattr(Visitor, f'os_{name}_modes_allowed', list(range(0, modes + 1)))
+                setattr(Visitor, f'os_{name}_modes_msg_arg', f'0 < mode < {oct(modes)}')
+            elif modes:
+                setattr(Visitor, f'os_{name}_modes_allowed', modes)
+                setattr(Visitor, f'os_{name}_modes_msg_arg', f'mode in {[oct(mode) for mode in modes]}')
+            else:
+                getattr(Visitor, f'os_{name}_modes_allowed').clear()
+
+        _set_mode_option('open', options.os_open_mode)
 
     def run(self) -> Generator[Tuple[int, int, str, Type[Any]], None, None]:
         """Entry point for flake8."""

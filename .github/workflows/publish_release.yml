@@ -45,13 +45,19 @@ jobs:
           VERSION=${BRANCH_NAME#hotfix/}
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Set tag for setuptools-scm
-        run: git tag v${RELEASE_VERSION} main
-
       - name: Build wheel
         run: |
+          if ! git rev-parse v${RELEASE_VERSION} > /dev/null 2>&1; then
+              _added_tag=1
+              git tag v${RELEASE_VERSION} main
+          fi
+
           python -m pip install build wheel
           python -m build --wheel --sdist
+
+          if [ ${_added_tag:-0} -eq 1 ]; then
+              git tag -d v${RELEASE_VERSION}
+          fi
 
       - name: Check metadata
         run: |
@@ -69,7 +75,7 @@ jobs:
       - name: Create release
         env:
           target: x86_64-unknown-linux-musl
-          parse_changelog_tag: v0.3.0
+          parse_changelog_tag: v0.4.7
           changelog: CHANGELOG.md
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

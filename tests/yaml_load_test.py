@@ -53,6 +53,9 @@ def test_ok(s):
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", Loader)',
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", UnsafeLoader)',
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", FullLoader)',
+        'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", yaml.Loader)',
+        'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", yaml.UnsafeLoader)',
+        'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", yaml.FullLoader)',
     ),
 )
 def test_abspath(s):

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Fix issue with recognizing YAML load function calls
+    Thanks to @D-Bhatta for submitting the issue
+
 ### Repository
 
 -   Update `dangoslen/changelog-enforcer` GitHub action to v3

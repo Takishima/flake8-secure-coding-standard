@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.2.2] - 2022-05-24
+
 ### Updated
 
 -   Update GitHub release publishing workflow
@@ -62,7 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release
 
-[Unreleased]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.2...HEAD
+
+[v1.2.2]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.1...v1.2.2
 
 [1.2.1]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.0...v1.2.1
 

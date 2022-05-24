@@ -15,10 +15,16 @@
 
 """Main file for the flake8_secure_coding_standard plugin."""
 
+import argparse
 import ast
+import operator
+import optparse
 import platform
+import stat
 import sys
-from typing import Any, Dict, Generator, List, Tuple, Type
+from typing import Any, AnyStr, Dict, Generator, List, Tuple, Type, Union
+
+import flake8.options.manager
 
 if sys.version_info < (3, 8):  # pragma: no cover
     import importlib_metadata  # pylint: disable=E0401
@@ -70,25 +76,21 @@ def _is_posix():
     return platform.system() in ('Linux', 'Darwin')
 
 
+# ------------------------------------------------------------------------------
+
+
+def _is_function_call(node: ast.Call, module: AnyStr, function: Union[List[AnyStr], Tuple[AnyStr], AnyStr]) -> bool:
+    if not isinstance(function, (list, tuple)):
+        function = (function,)
+    return (
+        isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == module
+        and node.func.attr in function
+    )
+
+
 # ==============================================================================
-
-
-def _is_os_system_call(node: ast.Call) -> bool:
-    return (
-        isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == 'os'
-        and node.func.attr == 'system'
-    )
-
-
-def _is_os_popen_call(node: ast.Call) -> bool:
-    return (
-        isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == 'os'
-        and node.func.attr == 'popen'
-    )
 
 
 def _is_os_path_call(node: ast.Call) -> bool:
@@ -239,20 +241,9 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
     return False
 
 
-def _is_jsonpickle_encode_call(node: ast.Call) -> bool:
-    if isinstance(node.func, ast.Attribute):
-        if isinstance(node.func.value, ast.Name) and node.func.value.id == 'jsonpickle' and node.func.attr == 'decode':
-            return True
-    return False
+# ==============================================================================
 
 
-def _is_shlex_quote_call(node: ast.Call) -> bool:
-    return not _is_posix() and (
-        isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == 'shlex'
-        and node.func.attr == 'quote'
-    )
 
 
 class Visitor(ast.NodeVisitor):
@@ -271,13 +262,13 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS104))
         elif _is_yaml_unsafe_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS105))
-        elif _is_jsonpickle_encode_call(node):
+        elif _is_function_call(node, module='jsonpickle', function='decode'):
             self.errors.append((node.lineno, node.col_offset, SCS106))
-        elif _is_os_system_call(node):
+        elif _is_function_call(node, module='os', function='system'):
             self.errors.append((node.lineno, node.col_offset, SCS102))
         elif _is_os_path_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS100))
-        elif _is_os_popen_call(node):
+        elif _is_function_call(node, module='os', function='popen'):
             self.errors.append((node.lineno, node.col_offset, SCS110))
         elif _is_shell_true_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS103))
@@ -285,7 +276,7 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS109))
         elif isinstance(node.func, ast.Name) and (node.func.id in ('eval', 'exec')):
             self.errors.append((node.lineno, node.col_offset, SCS101))
-        elif _is_shlex_quote_call(node):
+        elif not _is_posix() and _is_function_call(node, module='shlex', function='quote'):
             self.errors.append((node.lineno, node.col_offset, SCS111))
 
         self.generic_visit(node)
@@ -344,8 +335,9 @@ class Visitor(ast.NodeVisitor):
     def visit_With(self, node: ast.With) -> None:
         """Visitor method called for ast.With nodes."""
         for item in node.items:
-            if isinstance(item.context_expr, ast.Call) and _is_builtin_open_for_writing(item.context_expr):
-                self.errors.append((node.lineno, node.col_offset, SCS109))
+            if isinstance(item.context_expr, ast.Call):
+                if _is_builtin_open_for_writing(item.context_expr):
+                    self.errors.append((node.lineno, node.col_offset, SCS109))
 
     def visit_Assert(self, node: ast.Assert) -> None:
         """Visitor method called for ast.Assert nodes."""

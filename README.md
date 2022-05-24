@@ -25,6 +25,9 @@ flake8 plugin that enforces some secure coding standards.
 | SCS109 | Use of builtin `open` for writing is discouraged in favor of `os.open` to allow for setting file permissions  |
 | SCS110 | Avoid using `os.popen()` as it internally uses `subprocess.Popen` with `shell=True`                           |
 | SCS111 | Use of `shlex.quote()` should be avoided on non-POSIX platforms                                               |
+| SCS113 | Avoid using `pickle.load()` and `pickle.loads()`                                                              |
+| SCS114 | Avoid using `marshal.load()` and `marshal.loads()`                                                            |
+| SCS115 | Avoid using `shelve.open()`                                                                                   |
 
 ## Pre-commit hook
 

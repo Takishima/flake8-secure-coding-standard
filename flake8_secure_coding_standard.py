@@ -63,6 +63,9 @@ SCS109 = ' '.join(
 )
 SCS110 = 'Use of `os.popen()` should be avoided, as it internally uses `subprocess.Popen` with `shell=True`'
 SCS111 = 'Use of `shlex.quote()` should be avoided on non-POSIX platforms (such as Windows)'
+SCS113 = 'Avoid using `pickle.load()` and `pickle.loads()`'
+SCS114 = 'Avoid using `marshal.load()` and `marshal.loads()`'
+SCS115 = 'Avoid using `shelve.open()`'
 
 
 # ==============================================================================
@@ -278,6 +281,12 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS101))
         elif not _is_posix() and _is_function_call(node, module='shlex', function='quote'):
             self.errors.append((node.lineno, node.col_offset, SCS111))
+        elif _is_function_call(node, module='pickle', function=('load', 'loads')):
+            self.errors.append((node.lineno, node.col_offset, SCS113))
+        elif _is_function_call(node, module='marshal', function=('load', 'loads')):
+            self.errors.append((node.lineno, node.col_offset, SCS114))
+        elif _is_function_call(node, module='shelve', function='open'):
+            self.errors.append((node.lineno, node.col_offset, SCS115))
 
         self.generic_visit(node)
 
@@ -329,7 +338,20 @@ class Visitor(ast.NodeVisitor):
                 # * from shlex import quote
                 # * from shlex import quote as quoted
                 self.errors.append((node.lineno, node.col_offset, SCS111))
-
+            elif node.module == 'pickle' and alias.name in ('load', 'loads'):
+                # Cover:
+                # * from pickle import load
+                # * from pickle import loads as load
+                self.errors.append((node.lineno, node.col_offset, SCS113))
+            elif node.module == 'marshal' and alias.name in ('load', 'loads'):
+                # Cover:
+                # * from marshal import load
+                # * from marshal import loads as load
+                self.errors.append((node.lineno, node.col_offset, SCS114))
+            elif node.module == 'shelve' and alias.name == 'open':
+                # Cover:
+                # * from shelve import open
+                self.errors.append((node.lineno, node.col_offset, SCS115))
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> None:
@@ -338,6 +360,8 @@ class Visitor(ast.NodeVisitor):
             if isinstance(item.context_expr, ast.Call):
                 if _is_builtin_open_for_writing(item.context_expr):
                     self.errors.append((node.lineno, node.col_offset, SCS109))
+                elif _is_function_call(item.context_expr, module='shelve', function='open'):
+                    self.errors.append((node.lineno, node.col_offset, SCS115))
 
     def visit_Assert(self, node: ast.Assert) -> None:
         """Visitor method called for ast.Assert nodes."""

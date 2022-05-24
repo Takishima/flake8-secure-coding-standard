@@ -212,7 +212,7 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
                         return False
 
             if (
-                len(node.args) < 2
+                len(node.args) < 2  # pylint: disable=too-many-boolean-expressions
                 or (isinstance(node.args[1], ast.Name) and node.args[1].id in _unsafe_loaders)
                 or (
                     isinstance(node.args[1], ast.Attribute)

@@ -9,8 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--   Fix issue with recognizing YAML load function calls
-    Thanks to @D-Bhatta for submitting the issue
+-   Fix issue with recognizing YAML load function calls (thanks to [@D-Bhatta](https://github.com/D-Bhatta))
 
 ### Repository
 

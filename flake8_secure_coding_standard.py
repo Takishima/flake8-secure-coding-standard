@@ -211,12 +211,23 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
                         #  * yaml.load(x, Loader=SafeLoader)
                         return False
 
-            if len(node.args) < 2 or (node.args[1].id in _unsafe_loaders):
+            if (
+                len(node.args) < 2  # pylint: disable=too-many-boolean-expressions
+                or (isinstance(node.args[1], ast.Name) and node.args[1].id in _unsafe_loaders)
+                or (
+                    isinstance(node.args[1], ast.Attribute)
+                    and node.args[1].value.id == "yaml"
+                    and node.args[1].attr in _unsafe_loaders
+                )
+            ):
                 # Cover:
                 #  * yaml.load(x)
                 #  * yaml.load(x, Loader)
                 #  * yaml.load(x, UnsafeLoader)
                 #  * yaml.load(x, FullLoader)
+                #  * yaml.load(x, yaml.Loader)
+                #  * yaml.load(x, yaml.UnsafeLoader)
+                #  * yaml.load(x, yaml.FullLoader)
                 return True
 
     if isinstance(node.func, ast.Name):

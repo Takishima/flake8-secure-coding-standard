@@ -17,7 +17,6 @@
 
 import ast
 import operator
-import optparse  # pylint: disable=deprecated-module
 import platform
 import stat
 import sys
@@ -32,6 +31,14 @@ if sys.version_info < (3, 8):  # pragma: no cover
 else:  # pragma: no cover
     ast_Constant = ast.Constant
     import importlib.metadata as importlib_metadata
+
+
+_use_optparse = tuple(int(s) for s in importlib_metadata.version('flake8').split('.')) < (3, 8, 0)
+
+if _use_optparse:  # pragma: no cover
+    import optparse  # pylint: disable=deprecated-module
+else:
+    import argparse
 
 # ==============================================================================
 
@@ -133,11 +140,6 @@ def _read_octal_mode_option(name, value, default):
             raise ValueError(f'Invalid value for `{name}`: {value}!') from error
     else:
         raise ValueError(f'Invalid value for `{name}`: {value}!')
-
-
-def octal_mode_option_callback(option, _, value, parser):
-    """Octal mode option callback."""
-    setattr(parser.values, f'{option.dest}', _read_octal_mode_option(option.dest, value, _DEFAULT_MAX_MODE))
 
 
 # ==============================================================================
@@ -613,49 +615,82 @@ class Plugin:  # pylint: disable=R0903
     @classmethod
     def add_options(cls, option_manager: flake8.options.manager.OptionManager) -> None:
         """Add command line options."""
-        option_manager.add_option(
-            "--os-mkdir-mode",
-            action='callback',
-            callback=octal_mode_option_callback,
-            type=str,
-            parse_from_config=True,
-            default=False,
-            dest="os_mkdir_mode",
-            help="If provided, configure how 'mode' paramter of the os.mkdir() function are handled",
-        )
-        option_manager.add_option(
-            "--os-mkfifo-mode",
-            action='callback',
-            callback=octal_mode_option_callback,
-            type=str,
-            parse_from_config=True,
-            default=False,
-            dest="os_mkfifo_mode",
-            help="If provided, configure how 'mode' paramter of the os.mkfifo() function are handled",
-        )
-        option_manager.add_option(
-            "--os-mknod-mode",
-            action='callback',
-            callback=octal_mode_option_callback,
-            type=str,
-            parse_from_config=True,
-            default=False,
-            dest="os_mknod_mode",
-            help="If provided, configure how 'mode' paramter of the os.mknod() function are handled",
-        )
-        option_manager.add_option(
-            "--os-open-mode",
-            action='callback',
-            callback=octal_mode_option_callback,
-            type=str,
-            parse_from_config=True,
-            default=False,
-            dest="os_open_mode",
-            help="If provided, configure how 'mode' paramter of the os.open() function are handled",
+        options_data = (
+            (
+                "--os-mkdir-mode",
+                {
+                    'type': str,
+                    'parse_from_config': True,
+                    'default': False,
+                    'dest': "os_mkdir_mode",
+                    'help': "If provided, configure how 'mode' paramter of the os.mkdir() function are handled",
+                },
+            ),
+            (
+                "--os-mkfifo-mode",
+                {
+                    'type': str,
+                    'parse_from_config': True,
+                    'default': False,
+                    'dest': "os_mkfifo_mode",
+                    'help': "If provided, configure how 'mode' paramter of the os.mkfifo() function are handled",
+                },
+            ),
+            (
+                "--os-mknod-mode",
+                {
+                    'type': str,
+                    'parse_from_config': True,
+                    'default': False,
+                    'dest': "os_mknod_mode",
+                    'help': "If provided, configure how 'mode' paramter of the os.mknod() function are handled",
+                },
+            ),
+            (
+                "--os-open-mode",
+                {
+                    'type': str,
+                    'parse_from_config': True,
+                    'default': False,
+                    'dest': "os_open_mode",
+                    'help': "If provided, configure how 'mode' paramter of the os.open() function are handled",
+                },
+            ),
         )
 
+        if _use_optparse:  # pragma: no cover
+            cls.add_options_optparse(option_manager, options_data)
+        else:
+            cls.add_options_argparse(option_manager, options_data)
+
     @classmethod
-    def parse_options(cls, options: optparse.Values) -> None:
+    def add_options_optparse(
+        cls, option_manager: flake8.options.manager.OptionManager, options_data
+    ) -> None:  # pragma: no cover
+        """Add command line options using optparse."""
+
+        def octal_mode_option_callback(option, _, value, parser):
+            """Octal mode option callback."""
+            setattr(parser.values, f'{option.dest}', _read_octal_mode_option(option.dest, value, _DEFAULT_MAX_MODE))
+
+        callback = {'action': 'callback', 'callback': octal_mode_option_callback}
+        for opt_str, kwargs in options_data:
+            option_manager.add_option(opt_str, **{**kwargs, **callback})
+
+    @classmethod
+    def add_options_argparse(cls, option_manager: flake8.options.manager.OptionManager, options_data) -> None:
+        """Add command line options using argparse."""
+
+        class OctalModeAction(argparse.Action):
+            def __call__(self, parser, namespace, values, option_string=None):
+                setattr(namespace, self.dest, _read_octal_mode_option(self.dest, values, _DEFAULT_MAX_MODE))
+
+        action = {'action': OctalModeAction}
+        for opt_str, kwargs in options_data:
+            option_manager.add_option(opt_str, **{**kwargs, **action})
+
+    @classmethod
+    def parse_options(cls, options) -> None:
         """Parse command line options."""
 
         def _set_mode_option(name, modes):

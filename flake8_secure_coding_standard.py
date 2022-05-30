@@ -36,7 +36,7 @@ else:  # pragma: no cover
 _use_optparse = tuple(int(s) for s in importlib_metadata.version('flake8').split('.')) < (3, 8, 0)
 
 if _use_optparse:  # pragma: no cover
-    import optparse  # pylint: disable=deprecated-module
+    import optparse  # noqa: F401 pylint: disable=deprecated-module, unused-import
 else:
     import argparse
 
@@ -682,6 +682,8 @@ class Plugin:  # pylint: disable=R0903
         """Add command line options using argparse."""
 
         class OctalModeAction(argparse.Action):
+            """Action class for octal mode options."""
+
             def __call__(self, parser, namespace, values, option_string=None):
                 setattr(namespace, self.dest, _read_octal_mode_option(self.dest, values, _DEFAULT_MAX_MODE))
 

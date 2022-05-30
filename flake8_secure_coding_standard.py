@@ -216,13 +216,19 @@ def _is_builtin_open_for_writing(node: ast.Call) -> bool:
 
 def _get_mode_arg(node, args_idx):
     mode = None
-    if len(node.args) > args_idx and isinstance(node.args[args_idx], ast_Constant):
-        mode = node.args[args_idx].value
+    node_intern = None
+    if len(node.args) > args_idx:
+        node_intern = node.args[args_idx]
     elif node.keywords:
         for keyword in node.keywords:
-            if keyword.arg == 'mode' and isinstance(keyword.value, ast_Constant):
-                mode = keyword.value.value
+            if keyword.arg == 'mode':
+                node_intern = keyword.value
                 break
+    if node_intern:
+        if isinstance(node_intern, ast_Constant):
+            mode = node_intern.value
+        elif isinstance(node_intern, ast.Num):  # pragma: no cover
+            mode = node_intern.n
     return mode
 
 

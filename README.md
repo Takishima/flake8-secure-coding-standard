@@ -38,9 +38,16 @@ flake8 plugin that enforces some secure coding standards.
 ### Mode-like options
 
 Mode-like options are configuration options for errors/warnings that relate to some function that accepts a `mode`
-parameter (or similar) that control some file or directory permissions. For those kind of options, the plugin
-understands a variety of values that must be specified as `string`. They will then be parsed into a list of allowed mode
-values:
+parameter (or similar) that control some file or directory permissions. This is typically valid for the followiing warnings:
+
+- SCS116
+- SCS117
+- SCS118
+
+Since these warnings can be quite disruptive, they are turned off by default.
+
+For those kind of options, the plugin understands a variety of values that must be specified as `string`. They will then
+be parsed into a list of allowed mode values:
 
 - Any positive, non-zero (octal or decimal) integer value specifies the maximum value for the mode value
 - A comma-separated list of (octal or decimal) integers indicates the list of allowed mode values

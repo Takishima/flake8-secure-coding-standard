@@ -144,7 +144,7 @@ def test_os_function_call(mocker, platform, enabled_platform, function, option, 
     mocker.patch('platform.system', lambda: platform)
 
     flake8_warnings = results(s)
-    if enabled_platform and option:
+    if enabled_platform and option == 'True':
         assert flake8_warnings == {'1:0: ' + flake8_scs.Visitor.format_mode_msg(_msg_map[function])}
     else:
         assert flake8_warnings == set()

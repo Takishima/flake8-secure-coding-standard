@@ -16,8 +16,7 @@
 """Main file for the flake8_secure_coding_standard plugin."""
 
 import ast
-import operator
-import optparse
+import optparse  # pylint: disable=deprecated-module
 import platform
 import stat
 import sys
@@ -134,7 +133,8 @@ def _read_octal_mode_option(name, value, default):
         raise ValueError(f'Invalid value for `{name}`: {value}!')
 
 
-def octal_mode_option_callback(option, opt, value, parser):
+def octal_mode_option_callback(option, _, value, parser):
+    """Octal mode option callback."""
     setattr(parser.values, f'{option.dest}', _read_octal_mode_option(option.dest, value, _DEFAULT_MAX_MODE))
 
 
@@ -339,8 +339,6 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
 # ==============================================================================
 
 
-
-
 class Visitor(ast.NodeVisitor):
     """AST visitor class for the plugin."""
 
@@ -362,6 +360,7 @@ class Visitor(ast.NodeVisitor):
 
     @classmethod
     def format_mode_msg(cls, msg_id):
+        """Format a mode message."""
         return msg_id.format(getattr(cls, f'os_{cls.mode_msg_map[msg_id]}_modes_msg_arg'))
 
     def __init__(self) -> None:
@@ -369,7 +368,7 @@ class Visitor(ast.NodeVisitor):
         self.errors: List[Tuple[int, int, str]] = []
         self._from_imports: Dict[str, str] = {}
 
-    def visit_Call(self, node: ast.Call) -> None:
+    def visit_Call(self, node: ast.Call) -> None:  # pylint: disable=too-many-branches
         """Visitor method called for ast.Call nodes."""
         if _is_pdb_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS107))
@@ -522,6 +521,7 @@ class Plugin:  # pylint: disable=R0903
 
     @classmethod
     def add_options(cls, option_manager: flake8.options.manager.OptionManager) -> None:
+        """Add command line options."""
         option_manager.add_option(
             "--os-mkdir-mode",
             action='callback',
@@ -565,6 +565,8 @@ class Plugin:  # pylint: disable=R0903
 
     @classmethod
     def parse_options(cls, options: optparse.Values) -> None:
+        """Parse command line options."""
+
         def _set_mode_option(name, modes):
             if isinstance(modes, int) and modes > 0:
                 setattr(Visitor, f'os_{name}_modes_allowed', list(range(0, modes + 1)))

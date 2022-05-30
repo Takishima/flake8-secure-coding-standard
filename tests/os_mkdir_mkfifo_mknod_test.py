@@ -106,6 +106,8 @@ def test_os_function_ok(mocker, platform, function, option, s):
     mocker.patch('platform.system', lambda: platform)
 
     assert results(s) == set()
+
+
 @pytest.mark.parametrize(
     'platform, enabled_platform',
     (
@@ -123,9 +125,7 @@ def test_os_function_ok(mocker, platform, function, option, s):
     'function, s', ((function, s) for function, tests in _os_function_strings.items() for s in tests)
 )
 def test_os_function_call(mocker, platform, enabled_platform, function, option, s):
-    _msg_map = {'mkdir': flake8_scs.SCS116,
-                'mkfifo': flake8_scs.SCS117,
-                'mknod': flake8_scs.SCS118}
+    _msg_map = {'mkdir': flake8_scs.SCS116, 'mkfifo': flake8_scs.SCS117, 'mknod': flake8_scs.SCS118}
 
     flake8_scs.Plugin.parse_options(
         optparse.Values(

@@ -27,6 +27,7 @@ def results(s):
 
 # ==============================================================================
 
+
 def configure_plugin(arg):
     flake8_scs.Plugin.parse_options(
         optparse.Values(
@@ -41,6 +42,7 @@ def configure_plugin(arg):
 
 
 # ==============================================================================
+
 
 @pytest.mark.parametrize(
     'arg',
@@ -133,7 +135,9 @@ def test_os_open_call_default_modes(mode, arg, expected_warning):
     else:
         assert flake8_warnings == set()
 
+
 # ------------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize('mode', range(0o750, 0o761), ids=lambda arg: oct(arg))
 @pytest.mark.parametrize(
@@ -161,7 +165,9 @@ def test_os_open_call(mode, call_mode, arg, expected_warning):
     else:
         assert flake8_warnings == set()
 
+
 # ==========================================================================
+
 
 @pytest.mark.parametrize('mode', range(0o756, 0o777 + 1), ids=lambda arg: oct(arg))
 @pytest.mark.parametrize(
@@ -188,7 +194,9 @@ def test_os_open_with_default_modes(mode, call_mode, arg, expected_warning):
     else:
         assert flake8_warnings == set()
 
+
 # --------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize('mode', range(0o750, 0o761), ids=lambda arg: oct(arg))
 @pytest.mark.parametrize(

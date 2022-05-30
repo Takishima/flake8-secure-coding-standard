@@ -16,6 +16,7 @@
 """Main file for the flake8_secure_coding_standard plugin."""
 
 import ast
+import operator
 import optparse  # pylint: disable=deprecated-module
 import platform
 import stat
@@ -70,6 +71,7 @@ SCS115 = 'Avoid using `shelve.open()`'
 SCS116 = 'Avoid using `os.mkdir` and `os.makedirs` with unsafe file permissions (should be {})'
 SCS117 = 'Avoid using `os.mkfifo` with unsafe file permissions (should be {})'
 SCS118 = 'Avoid using `os.mknod` with unsafe file permissions (should be {})'
+SCS119 = 'Avoid using `os.chmod` with unsafe file permissions (W ^ X for group and others)'
 
 
 # ==============================================================================
@@ -338,6 +340,93 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
 
 # ==============================================================================
 
+_unop = {ast.USub: operator.neg, ast.Not: operator.not_, ast.Invert: operator.inv}
+_binop = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.BitXor: operator.xor,
+    ast.BitOr: operator.or_,
+    ast.BitAnd: operator.and_,
+}
+_chmod_known_mode_values = (
+    'S_ISUID',
+    'S_ISGID',
+    'S_ENFMT',
+    'S_ISVTX',
+    'S_IREAD',
+    'S_IWRITE',
+    'S_IEXEC',
+    'S_IRWXU',
+    'S_IRUSR',
+    'S_IWUSR',
+    'S_IXUSR',
+    'S_IRWXG',
+    'S_IRGRP',
+    'S_IWGRP',
+    'S_IXGRP',
+    'S_IRWXO',
+    'S_IROTH',
+    'S_IWOTH',
+    'S_IXOTH',
+)
+
+
+def _chmod_get_mode(node):
+    """
+    Extract the mode constant of a node.
+
+    Args:
+        node: an AST node
+
+    Raises:
+        ValueError: if a node is encountered that cannot be processed
+    """
+    if isinstance(node, ast.Name) and node.id in _chmod_known_mode_values:
+        return getattr(stat, node.id)
+    if (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.attr in _chmod_known_mode_values
+        and node.value.id == 'stat'
+    ):
+        return getattr(stat, node.attr)
+    if isinstance(node, ast.UnaryOp):
+        return _unop[type(node.op)](_chmod_get_mode(node.operand))
+    if isinstance(node, ast.BinOp):
+        return _binop[type(node.op)](_chmod_get_mode(node.left), _chmod_get_mode(node.right))
+
+    raise ValueError(f'Do not know how to process node: {ast.dump(node)}')
+
+
+def _chmod_has_wx_for_go(node):
+    if platform.system() == 'Windows':
+        # On Windows, only stat.S_IREAD and stat.S_IWRITE can be used, all other bits are ignored
+        return False
+
+    try:
+        modes = None
+        if len(node.args) > 1:
+            modes = _chmod_get_mode(node.args[1])
+        elif node.keywords:
+            for keyword in node.keywords:
+                if keyword.arg == 'mode':
+                    modes = _chmod_get_mode(keyword.value)
+                    break
+    except ValueError:
+        return False
+    else:
+        if modes is None:
+            # NB: this would be from invalid code such as `os.chmod("file.txt")`
+            raise RuntimeError('Unable to extract `mode` argument from function call!')
+        return bool(modes & (stat.S_IWGRP | stat.S_IXGRP | stat.S_IWOTH | stat.S_IXOTH))
+
+
+# ==============================================================================
+
 
 class Visitor(ast.NodeVisitor):
     """AST visitor class for the plugin."""
@@ -404,6 +493,8 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS114))
         elif _is_function_call(node, module='shelve', function='open'):
             self.errors.append((node.lineno, node.col_offset, SCS115))
+        elif _is_function_call(node, module='os', function='chmod') and _chmod_has_wx_for_go(node):
+            self.errors.append((node.lineno, node.col_offset, SCS119))
         elif _is_unix():
             if (
                 _is_function_call(node, module='os', function=('mkdir', 'makedirs'))

@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import ast
-import optparse
+from collections import namedtuple
 
 import pytest
 
@@ -29,16 +29,20 @@ def results(s):
 
 
 def configure_plugin(arg):
+    mode = flake8_scs._read_octal_mode_option('os_open_mode', arg, flake8_scs._DEFAULT_MAX_MODE)
+    OptionValue = namedtuple(
+        'options_values',
+        field_names=('os_mkdir_mode', 'os_mkfifo_mode', 'os_mknod_mode', 'os_open_mode'),
+    )
     flake8_scs.Plugin.parse_options(
-        optparse.Values(
-            {
-                'os_mkdir_mode': False,
-                'os_mkfifo_mode': False,
-                'os_mknod_mode': False,
-                'os_open_mode': flake8_scs._read_octal_mode_option('os_open_mode', arg, flake8_scs._DEFAULT_MAX_MODE),
-            }
+        OptionValue(
+            False,
+            False,
+            False,
+            mode,
         )
     )
+    assert flake8_scs.Visitor.os_open_modes_allowed == [] if mode is None else mode
 
 
 # ==============================================================================

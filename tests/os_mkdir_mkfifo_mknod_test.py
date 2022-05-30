@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import ast
-import optparse
+from collections import namedtuple
 
 import pytest
 
@@ -58,6 +58,26 @@ def results(s):
 # ==============================================================================
 
 
+def configure_plugin(function, arg):
+    mode = flake8_scs._read_octal_mode_option(f'os_{function}_mode', arg, flake8_scs._DEFAULT_MAX_MODE)
+    OptionValue = namedtuple(
+        'options_values',
+        field_names=('os_mkdir_mode', 'os_mkfifo_mode', 'os_mknod_mode', 'os_open_mode'),
+    )
+
+    option = OptionValue(
+        **{
+            **{'os_mkdir_mode': False, 'os_mkfifo_mode': False, 'os_mknod_mode': False, 'os_open_mode': False},
+            **{f'os_{function}_mode': mode},
+        }
+    )
+    flake8_scs.Plugin.parse_options(option)
+    assert getattr(flake8_scs.Visitor, f'os_{function}_modes_allowed') == [] if mode is None else mode
+
+
+# ==============================================================================
+
+
 @pytest.mark.parametrize(
     'platform',
     ('Linux', 'Darwin', 'Java', 'Windows'),
@@ -95,26 +115,7 @@ def results(s):
     ),
 )
 def test_os_function_ok(mocker, platform, function, option, s):
-    os_mkdir_mode = option if function == 'mkdir' else 'False'
-    os_mkfifo_mode = option if function == 'mkfifo' else 'False'
-    os_mknod_mode = option if function == 'mknod' else 'False'
-
-    flake8_scs.Plugin.parse_options(
-        optparse.Values(
-            {
-                'os_mkdir_mode': flake8_scs._read_octal_mode_option(
-                    'os_mkdir_mode', os_mkdir_mode, flake8_scs._DEFAULT_MAX_MODE
-                ),
-                'os_mkfifo_mode': flake8_scs._read_octal_mode_option(
-                    'os_mkfifo_mode', os_mkfifo_mode, flake8_scs._DEFAULT_MAX_MODE
-                ),
-                'os_mknod_mode': flake8_scs._read_octal_mode_option(
-                    'os_mknod_mode', os_mknod_mode, flake8_scs._DEFAULT_MAX_MODE
-                ),
-                'os_open_mode': False,
-            }
-        )
-    )
+    configure_plugin(function, option)
     mocker.patch('platform.system', lambda: platform)
 
     assert results(s) == set()
@@ -131,7 +132,7 @@ def test_os_function_ok(mocker, platform, function, option, s):
 )
 @pytest.mark.parametrize(
     'option',
-    (False, True),
+    ('False', 'True'),
 )
 @pytest.mark.parametrize(
     'function, s', ((function, s) for function, tests in _os_function_strings.items() for s in tests)
@@ -139,22 +140,7 @@ def test_os_function_ok(mocker, platform, function, option, s):
 def test_os_function_call(mocker, platform, enabled_platform, function, option, s):
     _msg_map = {'mkdir': flake8_scs.SCS116, 'mkfifo': flake8_scs.SCS117, 'mknod': flake8_scs.SCS118}
 
-    flake8_scs.Plugin.parse_options(
-        optparse.Values(
-            {
-                'os_mkdir_mode': flake8_scs._read_octal_mode_option(
-                    'os_mkdir_mode', str(option), flake8_scs._DEFAULT_MAX_MODE
-                ),
-                'os_mkfifo_mode': flake8_scs._read_octal_mode_option(
-                    'os_mkfifo_mode', str(option), flake8_scs._DEFAULT_MAX_MODE
-                ),
-                'os_mknod_mode': flake8_scs._read_octal_mode_option(
-                    'os_mknod_mode', str(option), flake8_scs._DEFAULT_MAX_MODE
-                ),
-                'os_open_mode': False,
-            }
-        )
-    )
+    configure_plugin(function, option)
     mocker.patch('platform.system', lambda: platform)
 
     flake8_warnings = results(s)

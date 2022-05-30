@@ -20,6 +20,8 @@ import pytest
 
 import flake8_secure_coding_standard as flake8_scs
 
+# ==============================================================================
+
 _os_function_strings = {
     'mkdir': (
         'os.mkdir("/tmp/test", 0o777)',
@@ -46,8 +48,14 @@ _os_function_strings = {
 }
 
 
+# ------------------------------------------------------------------------------
+
+
 def results(s):
     return {'{}:{}: {}'.format(*r) for r in flake8_scs.Plugin(ast.parse(s)).run()}
+
+
+# ==============================================================================
 
 
 @pytest.mark.parametrize(
@@ -87,17 +95,21 @@ def results(s):
     ),
 )
 def test_os_function_ok(mocker, platform, function, option, s):
+    os_mkdir_mode = option if function == 'mkdir' else 'False'
+    os_mkfifo_mode = option if function == 'mkfifo' else 'False'
+    os_mknod_mode = option if function == 'mknod' else 'False'
+
     flake8_scs.Plugin.parse_options(
         optparse.Values(
             {
                 'os_mkdir_mode': flake8_scs._read_octal_mode_option(
-                    'os_mkdir_mode', option, flake8_scs._DEFAULT_MAX_MODE
+                    'os_mkdir_mode', os_mkdir_mode, flake8_scs._DEFAULT_MAX_MODE
                 ),
                 'os_mkfifo_mode': flake8_scs._read_octal_mode_option(
-                    'os_mkfifo_mode', option, flake8_scs._DEFAULT_MAX_MODE
+                    'os_mkfifo_mode', os_mkfifo_mode, flake8_scs._DEFAULT_MAX_MODE
                 ),
                 'os_mknod_mode': flake8_scs._read_octal_mode_option(
-                    'os_mknod_mode', option, flake8_scs._DEFAULT_MAX_MODE
+                    'os_mknod_mode', os_mknod_mode, flake8_scs._DEFAULT_MAX_MODE
                 ),
                 'os_open_mode': False,
             }

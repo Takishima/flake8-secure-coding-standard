@@ -32,6 +32,7 @@ flake8 plugin that enforces some secure coding standards.
 | SCS116 | Avoid using `os.mkdir` and `os.makedirs` with unsafe file permissions                                         |
 | SCS117 | Avoid using `os.mkfifo` with unsafe file permissions                                                          |
 | SCS118 | Avoid using `os.mknod` with unsafe file permissions                                                           |
+| SCS119 | Avoid using `os.chmod` with unsafe file permissions (W ^ X for group and others)                              |
 
 
 ### Mode-like options

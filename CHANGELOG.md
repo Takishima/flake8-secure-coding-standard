@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Added SCS118 to avoid using `os.mknod` with unsafe file permissions
 -   Added SCS119 to avoid using `os.chmod` with unsafe file permissions (W ^ X for group and others)
 
+### Repository
+
+-   Add Python 3.10 to the list of configurations for testing
+
 ## [1.2.2] - 2022-05-24
 
 ### Updated

@@ -38,11 +38,13 @@ flake8 plugin that enforces some secure coding standards.
 ### Mode-like options
 
 Mode-like options are configuration options for errors/warnings that relate to some function that accepts a `mode`
-parameter (or similar) that control some file or directory permissions. This is typically valid for the followiing warnings:
+parameter (or similar) that control some file or directory permissions. This is typically valid for the followiing
+warnings (corresponding command-line option name in parentheses):
 
-- SCS116
-- SCS117
-- SCS118
+- SCS112 (`os-open-mode`)
+- SCS116 (`os-mkdir-mode`)
+- SCS117 (`os-mkfifo-mode`)
+- SCS118 (`os-mknod-mode`)
 
 Since these warnings can be quite disruptive, they are turned off by default.
 

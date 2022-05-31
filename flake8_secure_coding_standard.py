@@ -16,9 +16,13 @@
 """Main file for the flake8_secure_coding_standard plugin."""
 
 import ast
+import operator
 import platform
+import stat
 import sys
-from typing import Any, Dict, Generator, List, Tuple, Type
+from typing import Any, AnyStr, Dict, Generator, List, Tuple, Type, Union
+
+import flake8.options.manager
 
 if sys.version_info < (3, 8):  # pragma: no cover
     import importlib_metadata  # pylint: disable=E0401
@@ -28,7 +32,17 @@ else:  # pragma: no cover
     ast_Constant = ast.Constant
     import importlib.metadata as importlib_metadata
 
+
+_use_optparse = tuple(int(s) for s in importlib_metadata.version('flake8').split('.')) < (3, 8, 0)
+
+if _use_optparse:  # pragma: no cover
+    import optparse  # noqa: F401 pylint: disable=deprecated-module, unused-import
+else:
+    import argparse
+
 # ==============================================================================
+
+_DEFAULT_MAX_MODE = 0o755
 
 SCS100 = 'SCS100 use of os.path.abspath() and os.path.relpath() should be avoided in favor of os.path.realpath()'
 SCS101 = 'SCS101 `eval()` and `exec()` represent a security risk and should be avoided'
@@ -57,10 +71,78 @@ SCS109 = ' '.join(
 )
 SCS110 = 'Use of `os.popen()` should be avoided, as it internally uses `subprocess.Popen` with `shell=True`'
 SCS111 = 'Use of `shlex.quote()` should be avoided on non-POSIX platforms (such as Windows)'
+SCS112 = 'Avoid using `os.open` with unsafe permissions (should be {})'
+SCS113 = 'Avoid using `pickle.load()` and `pickle.loads()`'
+SCS114 = 'Avoid using `marshal.load()` and `marshal.loads()`'
+SCS115 = 'Avoid using `shelve.open()`'
+SCS116 = 'Avoid using `os.mkdir` and `os.makedirs` with unsafe file permissions (should be {})'
+SCS117 = 'Avoid using `os.mkfifo` with unsafe file permissions (should be {})'
+SCS118 = 'Avoid using `os.mknod` with unsafe file permissions (should be {})'
+SCS119 = 'Avoid using `os.chmod` with unsafe file permissions (W ^ X for group and others)'
 
 
 # ==============================================================================
 # Helper functions
+
+
+def _read_octal_mode_option(name, value, default):
+    """
+    Read an integer or list of integer configuration option.
+
+    Args:
+        name (str): Name of option
+        value (str): Value of option from the configuration file or on the CLI. Its value can be any of:
+            - 'yes', 'y', 'true' (case-insensitive)
+                The maximum mode value is then set to self.DEFAULT_MAX_MODE
+            - a single octal or decimal integer
+                The maximum mode value is then set to that integer value
+            - a comma-separated list of integers (octal or decimal)
+                The allowed mode values are then those found in the list
+            - anything else will count as a falseful value
+        default (int,list): Default value for option if set to one of
+            ('y', 'yes', 'true') in the configuration file or on the CLI
+
+    Returns:
+        A single integer or a (possibly empty) list of integers
+
+    Raises:
+        ValueError: if the value of the option is not valid
+    """
+
+    def _str_to_int(arg):
+        try:
+            return int(arg, 8)
+        except ValueError:
+            return int(arg)
+
+    value = value.lower()
+    modes = [mode.strip() for mode in value.split(',')]
+
+    if len(modes) > 1:
+        # Lists of allowed modes
+        try:
+            allowed_modes = [_str_to_int(mode) for mode in modes if mode]
+        except ValueError as error:
+            raise ValueError(f'Unable to convert {modes} elements to integers!') from error
+        else:
+            if not allowed_modes:
+                raise ValueError(f'Calculated empty value for `{name}`!')
+            return allowed_modes
+    elif modes and modes[0]:
+        # Single values (ie. max allowed value for mode)
+        try:
+            return _str_to_int(value)
+        except ValueError as error:
+            if value in ('y', 'yes', 'true'):
+                return default
+            if value in ('n', 'no', 'false'):
+                return None
+            raise ValueError(f'Invalid value for `{name}`: {value}!') from error
+    else:
+        raise ValueError(f'Invalid value for `{name}`: {value}!')
+
+
+# ==============================================================================
 
 
 def _is_posix():
@@ -70,25 +152,23 @@ def _is_posix():
     return platform.system() in ('Linux', 'Darwin')
 
 
+_is_unix = _is_posix
+
+# ------------------------------------------------------------------------------
+
+
+def _is_function_call(node: ast.Call, module: AnyStr, function: Union[List[AnyStr], Tuple[AnyStr], AnyStr]) -> bool:
+    if not isinstance(function, (list, tuple)):
+        function = (function,)
+    return (
+        isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == module
+        and node.func.attr in function
+    )
+
+
 # ==============================================================================
-
-
-def _is_os_system_call(node: ast.Call) -> bool:
-    return (
-        isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == 'os'
-        and node.func.attr == 'system'
-    )
-
-
-def _is_os_popen_call(node: ast.Call) -> bool:
-    return (
-        isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == 'os'
-        and node.func.attr == 'popen'
-    )
 
 
 def _is_os_path_call(node: ast.Call) -> bool:
@@ -132,6 +212,33 @@ def _is_builtin_open_for_writing(node: ast.Call) -> bool:
             #  * open(..., "x")
             return True
     return False
+
+
+def _get_mode_arg(node, args_idx):
+    mode = None
+    node_intern = None
+    if len(node.args) > args_idx:
+        node_intern = node.args[args_idx]
+    elif node.keywords:
+        for keyword in node.keywords:
+            if keyword.arg == 'mode':
+                node_intern = keyword.value
+                break
+    if node_intern:
+        if isinstance(node_intern, ast_Constant):
+            mode = node_intern.value
+        elif isinstance(node_intern, ast.Num):  # pragma: no cover
+            mode = node_intern.n
+    return mode
+
+
+def _is_allowed_mode(node, allowed_modes, args_idx):
+    mode = _get_mode_arg(node, args_idx=args_idx)
+    if mode is not None and allowed_modes:
+        return mode in allowed_modes
+
+    # NB: default to True in all other cases
+    return True
 
 
 def _is_shell_true_call(node: ast.Call) -> bool:
@@ -239,31 +346,126 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
     return False
 
 
-def _is_jsonpickle_encode_call(node: ast.Call) -> bool:
-    if isinstance(node.func, ast.Attribute):
-        if isinstance(node.func.value, ast.Name) and node.func.value.id == 'jsonpickle' and node.func.attr == 'decode':
-            return True
-    return False
+# ==============================================================================
+
+_unop = {ast.USub: operator.neg, ast.Not: operator.not_, ast.Invert: operator.inv}
+_binop = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.BitXor: operator.xor,
+    ast.BitOr: operator.or_,
+    ast.BitAnd: operator.and_,
+}
+_chmod_known_mode_values = (
+    'S_ISUID',
+    'S_ISGID',
+    'S_ENFMT',
+    'S_ISVTX',
+    'S_IREAD',
+    'S_IWRITE',
+    'S_IEXEC',
+    'S_IRWXU',
+    'S_IRUSR',
+    'S_IWUSR',
+    'S_IXUSR',
+    'S_IRWXG',
+    'S_IRGRP',
+    'S_IWGRP',
+    'S_IXGRP',
+    'S_IRWXO',
+    'S_IROTH',
+    'S_IWOTH',
+    'S_IXOTH',
+)
 
 
-def _is_shlex_quote_call(node: ast.Call) -> bool:
-    return not _is_posix() and (
-        isinstance(node.func, ast.Attribute)
-        and isinstance(node.func.value, ast.Name)
-        and node.func.value.id == 'shlex'
-        and node.func.attr == 'quote'
-    )
+def _chmod_get_mode(node):
+    """
+    Extract the mode constant of a node.
+
+    Args:
+        node: an AST node
+
+    Raises:
+        ValueError: if a node is encountered that cannot be processed
+    """
+    if isinstance(node, ast.Name) and node.id in _chmod_known_mode_values:
+        return getattr(stat, node.id)
+    if (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.attr in _chmod_known_mode_values
+        and node.value.id == 'stat'
+    ):
+        return getattr(stat, node.attr)
+    if isinstance(node, ast.UnaryOp):
+        return _unop[type(node.op)](_chmod_get_mode(node.operand))
+    if isinstance(node, ast.BinOp):
+        return _binop[type(node.op)](_chmod_get_mode(node.left), _chmod_get_mode(node.right))
+
+    raise ValueError(f'Do not know how to process node: {ast.dump(node)}')
+
+
+def _chmod_has_wx_for_go(node):
+    if platform.system() == 'Windows':
+        # On Windows, only stat.S_IREAD and stat.S_IWRITE can be used, all other bits are ignored
+        return False
+
+    try:
+        modes = None
+        if len(node.args) > 1:
+            modes = _chmod_get_mode(node.args[1])
+        elif node.keywords:
+            for keyword in node.keywords:
+                if keyword.arg == 'mode':
+                    modes = _chmod_get_mode(keyword.value)
+                    break
+    except ValueError:
+        return False
+    else:
+        if modes is None:
+            # NB: this would be from invalid code such as `os.chmod("file.txt")`
+            raise RuntimeError('Unable to extract `mode` argument from function call!')
+        return bool(modes & (stat.S_IWGRP | stat.S_IXGRP | stat.S_IWOTH | stat.S_IXOTH))
+
+
+# ==============================================================================
 
 
 class Visitor(ast.NodeVisitor):
     """AST visitor class for the plugin."""
+
+    os_mkdir_modes_allowed = []
+    os_mkdir_modes_msg_arg = ''
+    os_mkfifo_modes_allowed = []
+    os_mkfifo_modes_msg_arg = ''
+    os_mknod_modes_allowed = []
+    os_mknod_modes_msg_arg = ''
+    os_open_modes_allowed = []
+    os_open_modes_msg_arg = ''
+
+    mode_msg_map = {
+        SCS112: 'open',
+        SCS116: 'mkdir',
+        SCS117: 'mkfifo',
+        SCS118: 'mknod',
+    }
+
+    @classmethod
+    def format_mode_msg(cls, msg_id):
+        """Format a mode message."""
+        return msg_id.format(getattr(cls, f'os_{cls.mode_msg_map[msg_id]}_modes_msg_arg'))
 
     def __init__(self) -> None:
         """Initialize a Visitor object."""
         self.errors: List[Tuple[int, int, str]] = []
         self._from_imports: Dict[str, str] = {}
 
-    def visit_Call(self, node: ast.Call) -> None:
+    def visit_Call(self, node: ast.Call) -> None:  # pylint: disable=too-many-branches
         """Visitor method called for ast.Call nodes."""
         if _is_pdb_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS107))
@@ -271,13 +473,13 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS104))
         elif _is_yaml_unsafe_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS105))
-        elif _is_jsonpickle_encode_call(node):
+        elif _is_function_call(node, module='jsonpickle', function='decode'):
             self.errors.append((node.lineno, node.col_offset, SCS106))
-        elif _is_os_system_call(node):
+        elif _is_function_call(node, module='os', function='system'):
             self.errors.append((node.lineno, node.col_offset, SCS102))
         elif _is_os_path_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS100))
-        elif _is_os_popen_call(node):
+        elif _is_function_call(node, module='os', function='popen'):
             self.errors.append((node.lineno, node.col_offset, SCS110))
         elif _is_shell_true_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS103))
@@ -285,8 +487,41 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS109))
         elif isinstance(node.func, ast.Name) and (node.func.id in ('eval', 'exec')):
             self.errors.append((node.lineno, node.col_offset, SCS101))
-        elif _is_shlex_quote_call(node):
+        elif not _is_posix() and _is_function_call(node, module='shlex', function='quote'):
             self.errors.append((node.lineno, node.col_offset, SCS111))
+        elif (
+            _is_function_call(node, module='os', function='open')
+            and self.os_open_modes_allowed
+            and not _is_allowed_mode(node, self.os_open_modes_allowed, args_idx=2)
+        ):
+            self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS112)))
+        elif _is_function_call(node, module='pickle', function=('load', 'loads')):
+            self.errors.append((node.lineno, node.col_offset, SCS113))
+        elif _is_function_call(node, module='marshal', function=('load', 'loads')):
+            self.errors.append((node.lineno, node.col_offset, SCS114))
+        elif _is_function_call(node, module='shelve', function='open'):
+            self.errors.append((node.lineno, node.col_offset, SCS115))
+        elif _is_function_call(node, module='os', function='chmod') and _chmod_has_wx_for_go(node):
+            self.errors.append((node.lineno, node.col_offset, SCS119))
+        elif _is_unix():
+            if (
+                _is_function_call(node, module='os', function=('mkdir', 'makedirs'))
+                and self.os_mkdir_modes_allowed
+                and not _is_allowed_mode(node, self.os_mkdir_modes_allowed, args_idx=1)
+            ):
+                self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS116)))
+            elif (
+                _is_function_call(node, module='os', function='mkfifo')
+                and self.os_mkfifo_modes_allowed
+                and not _is_allowed_mode(node, self.os_mkfifo_modes_allowed, args_idx=1)
+            ):
+                self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS117)))
+            elif (
+                _is_function_call(node, module='os', function='mknod')
+                and self.os_mknod_modes_allowed
+                and not _is_allowed_mode(node, self.os_mknod_modes_allowed, args_idx=1)
+            ):
+                self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS118)))
 
         self.generic_visit(node)
 
@@ -338,14 +573,34 @@ class Visitor(ast.NodeVisitor):
                 # * from shlex import quote
                 # * from shlex import quote as quoted
                 self.errors.append((node.lineno, node.col_offset, SCS111))
-
+            elif node.module == 'pickle' and alias.name in ('load', 'loads'):
+                # Cover:
+                # * from pickle import load
+                # * from pickle import loads as load
+                self.errors.append((node.lineno, node.col_offset, SCS113))
+            elif node.module == 'marshal' and alias.name in ('load', 'loads'):
+                # Cover:
+                # * from marshal import load
+                # * from marshal import loads as load
+                self.errors.append((node.lineno, node.col_offset, SCS114))
+            elif node.module == 'shelve' and alias.name == 'open':
+                # Cover:
+                # * from shelve import open
+                self.errors.append((node.lineno, node.col_offset, SCS115))
         self.generic_visit(node)
 
     def visit_With(self, node: ast.With) -> None:
         """Visitor method called for ast.With nodes."""
         for item in node.items:
-            if isinstance(item.context_expr, ast.Call) and _is_builtin_open_for_writing(item.context_expr):
-                self.errors.append((node.lineno, node.col_offset, SCS109))
+            if isinstance(item.context_expr, ast.Call):
+                if _is_builtin_open_for_writing(item.context_expr):
+                    self.errors.append((node.lineno, node.col_offset, SCS109))
+                elif _is_function_call(item.context_expr, module='os', function='open') and not _is_allowed_mode(
+                    item.context_expr, self.os_open_modes_allowed, args_idx=2
+                ):
+                    self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS112)))
+                elif _is_function_call(item.context_expr, module='shelve', function='open'):
+                    self.errors.append((node.lineno, node.col_offset, SCS115))
 
     def visit_Assert(self, node: ast.Assert) -> None:
         """Visitor method called for ast.Assert nodes."""
@@ -362,6 +617,104 @@ class Plugin:  # pylint: disable=R0903
     def __init__(self, tree: ast.AST):
         """Initialize a Plugin object."""
         self._tree = tree
+
+    @classmethod
+    def add_options(cls, option_manager: flake8.options.manager.OptionManager) -> None:
+        """Add command line options."""
+        options_data = (
+            (
+                "--os-mkdir-mode",
+                {
+                    'type': str,
+                    'parse_from_config': True,
+                    'default': False,
+                    'dest': "os_mkdir_mode",
+                    'help': "If provided, configure how 'mode' paramter of the os.mkdir() function are handled",
+                },
+            ),
+            (
+                "--os-mkfifo-mode",
+                {
+                    'type': str,
+                    'parse_from_config': True,
+                    'default': False,
+                    'dest': "os_mkfifo_mode",
+                    'help': "If provided, configure how 'mode' paramter of the os.mkfifo() function are handled",
+                },
+            ),
+            (
+                "--os-mknod-mode",
+                {
+                    'type': str,
+                    'parse_from_config': True,
+                    'default': False,
+                    'dest': "os_mknod_mode",
+                    'help': "If provided, configure how 'mode' paramter of the os.mknod() function are handled",
+                },
+            ),
+            (
+                "--os-open-mode",
+                {
+                    'type': str,
+                    'parse_from_config': True,
+                    'default': False,
+                    'dest': "os_open_mode",
+                    'help': "If provided, configure how 'mode' paramter of the os.open() function are handled",
+                },
+            ),
+        )
+
+        if _use_optparse:  # pragma: no cover
+            cls.add_options_optparse(option_manager, options_data)
+        else:
+            cls.add_options_argparse(option_manager, options_data)
+
+    @classmethod
+    def add_options_optparse(
+        cls, option_manager: flake8.options.manager.OptionManager, options_data
+    ) -> None:  # pragma: no cover
+        """Add command line options using optparse."""
+
+        def octal_mode_option_callback(option, _, value, parser):
+            """Octal mode option callback."""
+            setattr(parser.values, f'{option.dest}', _read_octal_mode_option(option.dest, value, _DEFAULT_MAX_MODE))
+
+        callback = {'action': 'callback', 'callback': octal_mode_option_callback}
+        for opt_str, kwargs in options_data:
+            option_manager.add_option(opt_str, **{**kwargs, **callback})
+
+    @classmethod
+    def add_options_argparse(cls, option_manager: flake8.options.manager.OptionManager, options_data) -> None:
+        """Add command line options using argparse."""
+
+        class OctalModeAction(argparse.Action):
+            """Action class for octal mode options."""
+
+            def __call__(self, parser, namespace, values, option_string=None):
+                setattr(namespace, self.dest, _read_octal_mode_option(self.dest, values, _DEFAULT_MAX_MODE))
+
+        action = {'action': OctalModeAction}
+        for opt_str, kwargs in options_data:
+            option_manager.add_option(opt_str, **{**kwargs, **action})
+
+    @classmethod
+    def parse_options(cls, options) -> None:
+        """Parse command line options."""
+
+        def _set_mode_option(name, modes):
+            if isinstance(modes, int) and modes > 0:
+                setattr(Visitor, f'os_{name}_modes_allowed', list(range(0, modes + 1)))
+                setattr(Visitor, f'os_{name}_modes_msg_arg', f'0 < mode < {oct(modes)}')
+            elif modes:
+                setattr(Visitor, f'os_{name}_modes_allowed', modes)
+                setattr(Visitor, f'os_{name}_modes_msg_arg', f'mode in {[oct(mode) for mode in modes]}')
+            else:
+                getattr(Visitor, f'os_{name}_modes_allowed').clear()
+
+        _set_mode_option('mkdir', options.os_mkdir_mode)
+        _set_mode_option('mkfifo', options.os_mkfifo_mode)
+        _set_mode_option('mknod', options.os_mknod_mode)
+        _set_mode_option('open', options.os_open_mode)
 
     def run(self) -> Generator[Tuple[int, int, str, Type[Any]], None, None]:
         """Entry point for flake8."""

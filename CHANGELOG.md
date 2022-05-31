@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Added SCS112 to avoid using `os.open()` with unsafe permissions
+-   Added SCS113 to avoid using `pickle.load()` and `pickle.loads()`
+-   Added SCS114 to avoid using `marshal.load()` and `marshal.loads()`
+-   Added SCS115 to avoid using `shelve.open()`
+-   Added SCS116 to avoid using `os.mkdir` and `os.makedirs` with unsafe file permissions
+-   Added SCS117 to avoid using `os.mkfifo` with unsafe file permissions
+-   Added SCS118 to avoid using `os.mknod` with unsafe file permissions
+-   Added SCS119 to avoid using `os.chmod` with unsafe file permissions (W ^ X for group and others)
+
+### Repository
+
+-   Add Python 3.10 to the list of configurations for testing
+
 ## [1.2.2] - 2022-05-24
 
 ### Updated

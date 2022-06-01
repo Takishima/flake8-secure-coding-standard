@@ -69,16 +69,16 @@ SCS109 = ' '.join(
         'permissions',
     ]
 )
-SCS110 = 'Use of `os.popen()` should be avoided, as it internally uses `subprocess.Popen` with `shell=True`'
-SCS111 = 'Use of `shlex.quote()` should be avoided on non-POSIX platforms (such as Windows)'
-SCS112 = 'Avoid using `os.open` with unsafe permissions (should be {})'
-SCS113 = 'Avoid using `pickle.load()` and `pickle.loads()`'
-SCS114 = 'Avoid using `marshal.load()` and `marshal.loads()`'
-SCS115 = 'Avoid using `shelve.open()`'
-SCS116 = 'Avoid using `os.mkdir` and `os.makedirs` with unsafe file permissions (should be {})'
-SCS117 = 'Avoid using `os.mkfifo` with unsafe file permissions (should be {})'
-SCS118 = 'Avoid using `os.mknod` with unsafe file permissions (should be {})'
-SCS119 = 'Avoid using `os.chmod` with unsafe file permissions (W ^ X for group and others)'
+SCS110 = 'SCS110 Use of `os.popen()` should be avoided, as it internally uses `subprocess.Popen` with `shell=True`'
+SCS111 = 'SCS111 Use of `shlex.quote()` should be avoided on non-POSIX platforms (such as Windows)'
+SCS112 = 'SCS112 Avoid using `os.open` with unsafe permissions (should be {})'
+SCS113 = 'SCS113 Avoid using `pickle.load()` and `pickle.loads()`'
+SCS114 = 'SCS114 Avoid using `marshal.load()` and `marshal.loads()`'
+SCS115 = 'SCS115 Avoid using `shelve.open()`'
+SCS116 = 'SCS116 Avoid using `os.mkdir` and `os.makedirs` with unsafe file permissions (should be {})'
+SCS117 = 'SCS117 Avoid using `os.mkfifo` with unsafe file permissions (should be {})'
+SCS118 = 'SCS118 Avoid using `os.mknod` with unsafe file permissions (should be {})'
+SCS119 = 'SCS119 Avoid using `os.chmod` with unsafe file permissions (W ^ X for group and others)'
 
 
 # ==============================================================================
@@ -455,6 +455,10 @@ class Visitor(ast.NodeVisitor):
         SCS118: 'mknod',
     }
 
+    def _format_mode_msg(self, msg_id):
+        """Format a mode message."""
+        return self.__class__.format_mode_msg(msg_id)
+
     @classmethod
     def format_mode_msg(cls, msg_id):
         """Format a mode message."""
@@ -494,7 +498,7 @@ class Visitor(ast.NodeVisitor):
             and self.os_open_modes_allowed
             and not _is_allowed_mode(node, self.os_open_modes_allowed, args_idx=2)
         ):
-            self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS112)))
+            self.errors.append((node.lineno, node.col_offset, self._format_mode_msg(SCS112)))
         elif _is_function_call(node, module='pickle', function=('load', 'loads')):
             self.errors.append((node.lineno, node.col_offset, SCS113))
         elif _is_function_call(node, module='marshal', function=('load', 'loads')):
@@ -509,19 +513,19 @@ class Visitor(ast.NodeVisitor):
                 and self.os_mkdir_modes_allowed
                 and not _is_allowed_mode(node, self.os_mkdir_modes_allowed, args_idx=1)
             ):
-                self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS116)))
+                self.errors.append((node.lineno, node.col_offset, self._format_mode_msg(SCS116)))
             elif (
                 _is_function_call(node, module='os', function='mkfifo')
                 and self.os_mkfifo_modes_allowed
                 and not _is_allowed_mode(node, self.os_mkfifo_modes_allowed, args_idx=1)
             ):
-                self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS117)))
+                self.errors.append((node.lineno, node.col_offset, self._format_mode_msg(SCS117)))
             elif (
                 _is_function_call(node, module='os', function='mknod')
                 and self.os_mknod_modes_allowed
                 and not _is_allowed_mode(node, self.os_mknod_modes_allowed, args_idx=1)
             ):
-                self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS118)))
+                self.errors.append((node.lineno, node.col_offset, self._format_mode_msg(SCS118)))
 
         self.generic_visit(node)
 
@@ -598,7 +602,7 @@ class Visitor(ast.NodeVisitor):
                 elif _is_function_call(item.context_expr, module='os', function='open') and not _is_allowed_mode(
                     item.context_expr, self.os_open_modes_allowed, args_idx=2
                 ):
-                    self.errors.append((node.lineno, node.col_offset, self.format_mode_msg(SCS112)))
+                    self.errors.append((node.lineno, node.col_offset, self._format_mode_msg(SCS112)))
                 elif _is_function_call(item.context_expr, module='shelve', function='open'):
                     self.errors.append((node.lineno, node.col_offset, SCS115))
 

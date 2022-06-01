@@ -1,7 +1,13 @@
+---
+
 ci:
-    skip: [check-manifest]
+  skip: [check-manifest]
 
 repos:
+  - repo: meta
+    hooks:
+      - id: check-useless-excludes
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.2.0
     hooks:
@@ -25,11 +31,22 @@ repos:
         args:
           - --license-filepath
           - misc/license_header.txt
-  # Changes tabs to spaces
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.2.0
     hooks:
       - id: remove-tabs
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.1.0
+    hooks:
+      - id: codespell
+        args: [-I, .codespell.allow]
+
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.26.3
+    hooks:
+      - id: yamllint
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.10.1
@@ -42,8 +59,6 @@ repos:
     hooks:
       - id: black
         language_version: python3
-        # This is a slow hook, so only run this if --hook-stage manual is passed
-        stages: [manual]
 
   - repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
@@ -72,4 +87,4 @@ repos:
     rev: "0.48"
     hooks:
       - id: check-manifest
-        additional_dependencies: ['setuptools-scm', 'pybind11>=2.6']
+        additional_dependencies: ['setuptools-scm']

@@ -61,7 +61,7 @@ SCS105 = ' '.join(
     ]
 )
 SCS106 = 'SCS106 use of `jsonpickle.decode()` should be avoided'
-SCS107 = 'SCS107 debugging code shoud not be present in production code (e.g. `import pdb`)'
+SCS107 = 'SCS107 debugging code should not be present in production code (e.g. `import pdb`)'
 SCS108 = 'SCS108 `assert` statements should not be present in production code'
 SCS109 = ' '.join(
     [
@@ -633,7 +633,7 @@ class Plugin:  # pylint: disable=R0903
                     'parse_from_config': True,
                     'default': False,
                     'dest': "os_mkdir_mode",
-                    'help': "If provided, configure how 'mode' paramter of the os.mkdir() function are handled",
+                    'help': "If provided, configure how 'mode' parameter of the os.mkdir() function are handled",
                 },
             ),
             (
@@ -643,7 +643,7 @@ class Plugin:  # pylint: disable=R0903
                     'parse_from_config': True,
                     'default': False,
                     'dest': "os_mkfifo_mode",
-                    'help': "If provided, configure how 'mode' paramter of the os.mkfifo() function are handled",
+                    'help': "If provided, configure how 'mode' parameter of the os.mkfifo() function are handled",
                 },
             ),
             (
@@ -653,7 +653,7 @@ class Plugin:  # pylint: disable=R0903
                     'parse_from_config': True,
                     'default': False,
                     'dest': "os_mknod_mode",
-                    'help': "If provided, configure how 'mode' paramter of the os.mknod() function are handled",
+                    'help': "If provided, configure how 'mode' parameter of the os.mknod() function are handled",
                 },
             ),
             (
@@ -663,7 +663,7 @@ class Plugin:  # pylint: disable=R0903
                     'parse_from_config': True,
                     'default': False,
                     'dest': "os_open_mode",
-                    'help': "If provided, configure how 'mode' paramter of the os.open() function are handled",
+                    'help': "If provided, configure how 'mode' parameter of the os.open() function are handled",
                 },
             ),
         )

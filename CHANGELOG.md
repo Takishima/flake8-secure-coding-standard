@@ -18,9 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Added SCS118 to avoid using `os.mknod` with unsafe file permissions
 -   Added SCS119 to avoid using `os.chmod` with unsafe file permissions (W ^ X for group and others)
 
+### Fixed
+
+-   Fix typos found by `codespell`
+-   Fix issues discovered by `yamllint`
+
 ### Repository
 
 -   Add Python 3.10 to the list of configurations for testing
+-   Add `codespell` pre-commit hook
+-   Add `yamllint` configuration file and pre-commit hook
 
 ## [1.2.2] - 2022-05-24
 

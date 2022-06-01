@@ -20,7 +20,7 @@ flake8 plugin that enforces some secure coding standards.
 | SCS104 | Use of `tempfile.mktemp()` should be avoided, prefer `tempfile.mkstemp()`                                     |
 | SCS105 | Use of `yaml.load()` should be avoided, prefer `yaml.safe_load()` or `yaml.load(xxx, Loader=SafeLoader)`      |
 | SCS106 | Use of `jsonpickle.decode()` should be avoided                                                                |
-| SCS107 | Use of debugging code shoud not be present in production code (e.g. `import pdb`)                             |
+| SCS107 | Use of debugging code should not be present in production code (e.g. `import pdb`)                            |
 | SCS108 | `assert` statements should not be present in production code                                                  |
 | SCS109 | Use of builtin `open` for writing is discouraged in favor of `os.open` to allow for setting file permissions  |
 | SCS110 | Avoid using `os.popen()` as it internally uses `subprocess.Popen` with `shell=True`                           |

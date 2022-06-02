@@ -35,30 +35,37 @@ flake8 plugin that enforces some secure coding standards.
 | SCS119 | Avoid using `os.chmod` with unsafe file permissions (W ^ X for group and others)                              |
 
 
+## Plugin configuration options
+
+This plugin supports some configuration options that may either be specified directly on the command line with a flag
+using the option name as `--name` or by specifying them in one of flake8's configuration files (ie. `pyproject.toml`,
+`setup.cfg`, `.flake8`, etc.).
+
+Available options:
+
+| Option name    | Option type | Default value | Related error code |
+|----------------|-------------|---------------|--------------------|
+| os-open-mode   | mode-like   | 0 (off)       | SCS112             |
+| os-mkdir-mode  | mode-like   | 0 (off)       | SCS116             |
+| os-mkfifo-mode | mode-like   | 0 (off)       | SCS117             |
+| os-mknod-mode  | mode-like   | 0 (off)       | SCS118             |
+
+
 ### Mode-like options
 
 Mode-like options are configuration options for errors/warnings that relate to some function that accepts a `mode`
-parameter (or similar) that control some file or directory permissions. This is typically valid for the followiing
-warnings (corresponding command-line option name in parentheses):
-
-- SCS112 (`os-open-mode`)
-- SCS116 (`os-mkdir-mode`)
-- SCS117 (`os-mkfifo-mode`)
-- SCS118 (`os-mknod-mode`)
-
-Since these warnings can be quite disruptive, they are turned off by default.
-
-For those kind of options, the plugin understands a variety of values that must be specified as `string`. They will then
-be parsed into a list of allowed mode values:
+parameter (or similar) that control some file or directory permissions. For those kind of options, the plugin
+understands a variety of values that must be specified as `string`. They will then be parsed into a list of allowed mode
+values:
 
 - Any positive, non-zero (octal or decimal) integer value specifies the maximum value for the mode value
 - A comma-separated list of (octal or decimal) integers indicates the list of allowed mode values
 - 'y', 'yes', 'true' (case-insensitive) will turn on the warnings using the default value of `0o755`
 - 'n', 'no', 'false' (case-insensitive) will turn off the warnings
 
-Example of values:
+Example of values (for `pyproject.toml`):
 ```toml
-    [flake8]
+    [tool.flake8]
     os-open-mode = '0'            # check disabled
     os-open-mode = 'no'           # check disabled
     os-open-mode = '493'          # all modes from 0 to 493 (=0o755)
@@ -80,8 +87,8 @@ See [pre-commit](https://github.com/pre-commit/pre-commit) for instructions
 Sample `.pre-commit-config.yaml`:
 
 ```yaml
--   repo: https://github.com/PyCQA/flake8g
-    rev: 3.7.8
+-   repo: https://github.com/PyCQA/flake8
+    rev: 4.0.0
     hooks:
     -   id: flake8
         additional_dependencies: [flake8-secure-coding-standard]

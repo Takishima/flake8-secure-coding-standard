@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Repository
+
+-   Remove soon to be deprecated `version` in GitHub workflows
+
 ## [1.3.0] - 2022-06-02
 
 ### Added

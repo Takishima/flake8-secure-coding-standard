@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Repository
 
 -   Remove soon to be deprecated `version` in GitHub workflows
+-   Update `pre-commit/pre-commit-hooks` to v4.3.0
+-   Update `pre-commit/mirrors-pylint` to v3.0.0a5
 
 ## [1.3.0] - 2022-06-02
 

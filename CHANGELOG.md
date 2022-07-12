@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Update `pre-commit/pre-commit-hooks` to v4.3.0
 -   Update `pre-commit/mirrors-pylint` to v3.0.0a5
 -   Update `black` hook to v22.6.0
+-   Update `yamllint` hook to v1.26.3
+-   Update `Lucas-C/pre-commit-hooks` hook to v1.3.0
 
 ## [1.3.0] - 2022-06-02
 

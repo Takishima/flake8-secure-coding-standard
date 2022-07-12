@@ -24,7 +24,7 @@ repos:
       - id: fix-encoding-pragma
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.2.0
+    rev: v1.3.0
     hooks:
       - id: insert-license
         files: \.py$
@@ -33,7 +33,7 @@ repos:
           - misc/license_header.txt
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.2.0
+    rev: v1.3.0
     hooks:
       - id: remove-tabs
 
@@ -44,7 +44,7 @@ repos:
         args: [-I, .codespell.allow]
 
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.26.3
+    rev: v1.27.1
     hooks:
       - id: yamllint
 

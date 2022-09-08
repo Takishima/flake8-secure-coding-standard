@@ -108,8 +108,7 @@ def test_read_octal_mode_option_invalid(arg):
     ids=_id_func,
 )
 def test_os_allowed_mode(function, arg, allowed_modes):
-    options = flake8.options.manager.OptionManager(version='1.0', prog='prog')
+    options = flake8.options.manager.OptionManager(version='1.0', plugin_versions="", parents=[])
     flake8_scs.Plugin.add_options(options)
-    values, _ = options.parse_args([f'--os-{function}-mode={arg}'])
-    flake8_scs.Plugin.parse_options(values)
+    flake8_scs.Plugin.parse_options(options.parse_args([f'--os-{function}-mode={arg}']))
     assert getattr(flake8_scs.Visitor, f'os_{function}_modes_allowed') == allowed_modes

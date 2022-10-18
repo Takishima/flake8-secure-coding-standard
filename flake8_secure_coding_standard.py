@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2021 Damien Nguyen
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -557,7 +556,7 @@ class Visitor(ast.NodeVisitor):
                 #  * import os.path as op; from op import relpath, abspath
                 self.errors.append((node.lineno, node.col_offset, SCS100))
             elif (node.module == 'subprocess' and alias.name in ('getoutput', 'getstatusoutput')) or (
-                (node.module == 'asyncio' and alias.name == 'create_subprocess_shell')
+                node.module == 'asyncio' and alias.name == 'create_subprocess_shell'
             ):
                 # Cover:
                 # * from subprocess import getoutput

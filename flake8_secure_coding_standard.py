@@ -15,24 +15,18 @@
 """Main file for the flake8_secure_coding_standard plugin."""
 
 import ast
+import importlib.metadata
 import operator
 import platform
 import stat
-import sys
 from typing import Any, AnyStr, Dict, Generator, List, Tuple, Type, Union
 
 import flake8.options.manager
 
-if sys.version_info < (3, 8):  # pragma: no cover
-    import importlib_metadata  # pylint: disable=E0401
+ast_Constant = ast.Constant
 
-    ast_Constant = ast.NameConstant  # pylint: disable=invalid-name
-else:  # pragma: no cover
-    ast_Constant = ast.Constant
-    import importlib.metadata as importlib_metadata
+_use_optparse = tuple(int(s) for s in importlib.metadata.version('flake8').split('.')) < (3, 8, 0)
 
-
-_use_optparse = tuple(int(s) for s in importlib_metadata.version('flake8').split('.')) < (3, 8, 0)
 
 if _use_optparse:  # pragma: no cover
     import optparse  # noqa: F401 pylint: disable=deprecated-module, unused-import
@@ -615,7 +609,7 @@ class Plugin:  # pylint: disable=R0903
     """Plugin class."""
 
     name = __name__
-    version = importlib_metadata.version(__name__)
+    version = importlib.metadata.version(__name__)
 
     def __init__(self, tree: ast.AST):
         """Initialize a Plugin object."""

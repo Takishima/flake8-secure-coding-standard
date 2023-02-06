@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 -   Changed minimum Python version to 3.8.X
-
+-   Support flake8 >=6.0.0,<7.0.0
 ### Updated
 
 -   Update GitHub release publishing workflow

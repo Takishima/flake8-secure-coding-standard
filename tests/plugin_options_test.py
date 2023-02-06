@@ -36,11 +36,10 @@ import flake8_secure_coding_standard as flake8_scs
 
 
 def create_options_manager():
-    flake8MajorVersion = int(flake8.__version__[0])
-    if flake8MajorVersion < 6:
-        return flake8.options.manager.OptionManager(version='1.0', plugin_versions="", parents=[])
-    else:
-        return flake8.options.manager.OptionManager(version='1.0', plugin_versions="", parents=[], formatter_names=[])
+    ctor_args = dict(version='1.0', plugin_versions="", parents=[])
+    if int(flake8.__version__[0]) >= 6:
+        ctor_args['formatter_names'] = []
+    return flake8.options.manager.OptionManager(**ctor_args)
 
 
 def results(s):

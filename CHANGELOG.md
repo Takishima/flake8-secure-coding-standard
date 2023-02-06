@@ -25,13 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Remove soon to be deprecated `version` in GitHub workflows
 -   Update `thomaseizinger/keep-a-changelog-new-release` GitHub action to v1.3.0
--   Update `Lucas-C/pre-commit-hooks` hook to v1.4.1
+-   Update `Lucas-C/pre-commit-hooks` hook to v1.4.2
 -   Update `asottile/pyupgrade` to v3.2.0
 -   Update `black` hook to v22.12.0
 -   Update `blacken-docs` hook to v1.13.0
 -   Update `codespell` hook to v2.2.2
 -   Update `flake8` hook to v5.0.4
--   Update `isort` hook to v5.11.4
+-   Update `isort` hook to v5.12.0
 -   Update `pre-commit/mirrors-pylint` to v3.0.0a5
 -   Update `pre-commit/pre-commit-hooks` to v4.4.0
 -   Update `pyupgrade` hook to v3.3.1

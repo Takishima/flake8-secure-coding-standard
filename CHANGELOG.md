@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.4.0] - 2023-02-06
+
 ### Changed
 
 -   Changed minimum Python version to 3.8.X
@@ -16,11 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Update GitHub release publishing workflow
 -   Added some more pre-commit hooks:
-    +  doc8
-    +  codespell
-    +  yamllint
-    +  blacken-docs
-    +  pyupgrade
+    -   doc8
+    -   codespell
+    -   yamllint
+    -   blacken-docs
+    -   pyupgrade
 
 ### Repository
 
@@ -119,7 +121,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Initial release
 
-[Unreleased]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.4.0...HEAD
+
+[v1.4.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.3.0...v1.4.0
 
 [1.3.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.2...v1.3.0
 

@@ -34,6 +34,12 @@ import pytest
 
 import flake8_secure_coding_standard as flake8_scs
 
+def create_options_manager():
+    flake8MajorVersion = int(flake8.__version__[0])
+    if flake8MajorVersion < 6:
+        return flake8.options.manager.OptionManager(version='1.0', plugin_versions="", parents=[])
+    else:
+        return flake8.options.manager.OptionManager(version='1.0', plugin_versions="", parents=[], formatter_names=[])
 
 def results(s):
     return {'{}:{}: {}'.format(*r) for r in flake8_scs.Plugin(ast.parse(s)).run()}
@@ -107,7 +113,7 @@ def test_read_octal_mode_option_invalid(arg):
     ids=_id_func,
 )
 def test_os_allowed_mode(function, arg, allowed_modes):
-    options = flake8.options.manager.OptionManager(version='1.0', plugin_versions="", parents=[])
+    options = create_options_manager()
     flake8_scs.Plugin.add_options(options)
     flake8_scs.Plugin.parse_options(options.parse_args([f'--os-{function}-mode={arg}']))
     assert getattr(flake8_scs.Visitor, f'os_{function}_modes_allowed') == allowed_modes

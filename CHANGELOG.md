@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Updated
 
+-   Update pre-commit isort hook to 5.12.0
 -   Update GitHub release publishing workflow
 -   Added some more pre-commit hooks:
     +  doc8

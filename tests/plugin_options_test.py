@@ -36,7 +36,7 @@ import flake8_secure_coding_standard as flake8_scs
 
 
 def create_options_manager():
-    ctor_args = dict(version='1.0', plugin_versions="", parents=[])
+    ctor_args = {'version': '1.0', 'plugin_versions': '', 'parents': []}
     if int(flake8.__version__[0]) >= 6:
         ctor_args['formatter_names'] = []
     return flake8.options.manager.OptionManager(**ctor_args)

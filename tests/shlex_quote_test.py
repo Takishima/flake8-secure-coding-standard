@@ -23,31 +23,31 @@ def results(s):
     return {'{}:{}: {}'.format(*r) for r in flake8_scs.Plugin(ast.parse(s)).run()}
 
 
-@pytest.mark.parametrize('s', ('', 'int(0)'))
+@pytest.mark.parametrize('s', ['', 'int(0)'])
 def test_shlex_quote_always_success(s):
     assert results(s) == set()
 
 
 @pytest.mark.parametrize(
-    'platform, expected_success',
-    (
+    ('platform', 'expected_success'),
+    [
         ('Linux', True),
         ('Darwin', True),
         ('Java', False),
         ('Windows', False),
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'from shlex import quote',
         'from shlex import quote as quoted',
         'shlex.quote("ls -l")',
         'shlex.quote(command_str)',
-    ),
+    ],
 )
 def test_shlex_quote(mocker, platform, expected_success, s):
-    mocker.patch('platform.system', lambda: platform)
+    mocker.patch('platform.system', return_value=platform)
     if expected_success:
         assert results(s) == set()
     else:

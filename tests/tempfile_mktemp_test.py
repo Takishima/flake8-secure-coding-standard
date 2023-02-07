@@ -25,26 +25,26 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'import tempfile',
         'import tempfile as temp',
         'tempfile.mkstemp()',
         'tmp = tempfile.mkstemp()',
-    ),
+    ],
 )
 def test_mktemp_ok(s):
     assert results(s) == set()
 
 
 @pytest.mark.parametrize(
-    's, offset',
-    (
+    ('s', 'offset'),
+    [
         ('from tempfile import mktemp', 0),
         ('mktemp()', 0),
         ('tempfile.mktemp()', 0),
         ('tmp = tempfile.mktemp()', 6),
-    ),
+    ],
 )
 def test_mktemp_not_ok(s, offset):
     assert results(s) == {f'1:{offset}: ' + flake8_scs.SCS104}

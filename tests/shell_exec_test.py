@@ -25,7 +25,7 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'from os import getcwd',
         'from os.path import join',
@@ -42,15 +42,15 @@ def results(s):
         'sp.check_call(["cat", "/etc/passwd"], shell=False)',
         'subprocess.check_output(["cat", "/etc/passwd"], shell=False)',
         'sp.check_output(["cat", "/etc/passwd"], shell=False)',
-    ),
+    ],
 )
 def test_shell_exec_ok(s):
     assert results(s) == set()
 
 
 @pytest.mark.parametrize(
-    's, msg_id',
-    (
+    ('s', 'msg_id'),
+    [
         ('os.system("ls -l")', 'SCS102'),
         ('from os import system', 'SCS102'),
         ('from os import system as os_system', 'SCS102'),
@@ -89,7 +89,7 @@ def test_shell_exec_ok(s):
         ('os.popen("cat", buffering=1)', 'SCS110'),
         ('os.popen("cat", mode="w")', 'SCS110'),
         ('os.popen("cat", mode="w", buffering=1)', 'SCS110'),
-    ),
+    ],
 )
 def test_shell_exec_not_ok(s, msg_id):
     assert results(s) == {'1:0: ' + getattr(flake8_scs, msg_id)}

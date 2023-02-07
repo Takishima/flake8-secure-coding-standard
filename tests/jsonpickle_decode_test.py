@@ -25,18 +25,15 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'jsonpickle.encode(pvars)',
-    ),
+    ],
 )
 def test_ok(s):
     assert results(s) == set()
 
 
-@pytest.mark.parametrize(
-    's',
-    ('jsonpickle.decode(payload)',),
-)
+@pytest.mark.parametrize('s', ['jsonpickle.decode(payload)'])
 def test_abspath(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS106}

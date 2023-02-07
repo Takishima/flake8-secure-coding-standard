@@ -25,12 +25,12 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'i = int(0)',
         'sympy.sqrt(8).evalf()',
         'myvar.eval()',
-    ),
+    ],
 )
 def test_ok(s):
     assert results(s) == set()
@@ -38,10 +38,10 @@ def test_ok(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'eval(input("Your input> "))',
         r'exec("a = 5\nb=10\nprint(\"Sum =\", a+b)")',
-    ),
+    ],
 )
 def test_abspath(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS101}

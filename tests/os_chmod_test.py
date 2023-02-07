@@ -28,14 +28,14 @@ def results(s):
 
 
 @pytest.mark.parametrize(
-    's, expected',
-    (
+    ('s', 'expected'),
+    [
         ('S_IREAD', stat.S_IREAD),
         ('stat.S_IREAD', stat.S_IREAD),
         ('S_IREAD | S_IWRITE', stat.S_IREAD | stat.S_IWRITE),
         ('stat.S_IREAD | stat.S_IWRITE', stat.S_IREAD | stat.S_IWRITE),
         ('stat.S_IREAD | stat.S_IWRITE | S_IXUSR', stat.S_IREAD | stat.S_IWRITE | stat.S_IXUSR),
-    ),
+    ],
 )
 def test_chmod_get_mode(s, expected):
     node = ast.parse(s).body[0].value
@@ -44,24 +44,24 @@ def test_chmod_get_mode(s, expected):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'stat.ST_MODE',
         'bla.S_IREAD',
-    ),
+    ],
 )
 def test_chmod_get_mode_invalid(s):
     node = ast.parse(s).body[0].value
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='Do not know how to process node'):
         flake8_scs._chmod_get_mode(node)
 
 
 @pytest.mark.parametrize(
-    's, expected',
-    (
+    ('s', 'expected'),
+    [
         ('-stat.S_IREAD', -stat.S_IREAD),
         ('~stat.S_IREAD', ~stat.S_IREAD),
         ('not stat.S_IREAD', not stat.S_IREAD),
-    ),
+    ],
 )
 def test_chmod_get_mode_unop(s, expected):
     node = ast.parse(s).body[0].value
@@ -69,8 +69,8 @@ def test_chmod_get_mode_unop(s, expected):
 
 
 @pytest.mark.parametrize(
-    's, expected',
-    (
+    ('s', 'expected'),
+    [
         ('stat.S_IREAD + stat.S_IWRITE', stat.S_IREAD + stat.S_IWRITE),
         ('stat.S_IREAD - stat.S_IWRITE', stat.S_IREAD - stat.S_IWRITE),
         ('stat.S_IREAD * stat.S_IWRITE', stat.S_IREAD * stat.S_IWRITE),
@@ -80,7 +80,7 @@ def test_chmod_get_mode_unop(s, expected):
         ('stat.S_IREAD ^ stat.S_IWRITE', stat.S_IREAD ^ stat.S_IWRITE),
         ('stat.S_IREAD | stat.S_IWRITE', stat.S_IREAD | stat.S_IWRITE),
         ('stat.S_IREAD & stat.S_IWRITE', stat.S_IREAD & stat.S_IWRITE),
-    ),
+    ],
 )
 def test_chmod_get_mode_binop(s, expected):
     node = ast.parse(s).body[0].value
@@ -88,19 +88,19 @@ def test_chmod_get_mode_binop(s, expected):
 
 
 @pytest.mark.parametrize(
-    'platform, enabled_platform',
-    (
+    ('platform', 'enabled_platform'),
+    [
         ('Linux', True),
         ('Darwin', True),
         ('Java', True),
         ('Windows', False),
-    ),
+    ],
 )
-@pytest.mark.parametrize('fname', ('"file.txt"', 'fname'))
-@pytest.mark.parametrize('arg_type', ('', 'mode='), ids=('arg', 'keyword'))
+@pytest.mark.parametrize('fname', ['"file.txt"', 'fname'])
+@pytest.mark.parametrize('arg_type', ['', 'mode='], ids=('arg', 'keyword'))
 @pytest.mark.parametrize(
     'forbidden',
-    (
+    [
         'S_IRGRP',  # NB: not actually a forbidden value, only for testing...
         'S_IRWXG',
         'S_IWGRP',
@@ -108,20 +108,20 @@ def test_chmod_get_mode_binop(s, expected):
         'S_IRWXO',
         'S_IWOTH',
         'S_IXOTH',
-    ),
+    ],
 )
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'S_IREAD',
         'S_IREAD | S_IWRITE',
         'S_IRUSR | S_IWUSR | S_IXUSR',
-    ),
+    ],
     ids=lambda s: s if s else '<empty>',
 )
 def test_chmod(mocker, platform, enabled_platform, fname, arg_type, forbidden, s):
-    mocker.patch('platform.system', lambda: platform)
+    mocker.patch('platform.system', return_value=platform)
 
     if s:
         code = f'os.chmod({fname}, {arg_type}{s} | {forbidden}) #@'
@@ -136,34 +136,34 @@ def test_chmod(mocker, platform, enabled_platform, fname, arg_type, forbidden, s
         assert flake8_warnings == set()
 
 
-@pytest.mark.parametrize('platform', ('Linux', 'Darwin', 'Java', 'Windows'))
+@pytest.mark.parametrize('platform', ['Linux', 'Darwin', 'Java', 'Windows'])
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'os.chmod("file.txt", stat.ST_MODE)',
         'os.chmod("file.txt", other.S_IRWXO)',
         'os.chmod("file.txt", mode)',
         'os.chmod("file.txt", mode=mode)',
-    ),
+    ],
 )
 def test_chmod_no_warning(mocker, platform, s):
-    mocker.patch('platform.system', lambda: platform)
+    mocker.patch('platform.system', return_value=platform)
 
     assert results(s) == set()
 
 
 @pytest.mark.parametrize(
-    'platform, enabled_platform',
-    (
+    ('platform', 'enabled_platform'),
+    [
         ('Linux', True),
         ('Darwin', True),
         ('Java', True),
         ('Windows', False),
-    ),
+    ],
 )
-@pytest.mark.parametrize('s', ('os.chmod("file")',))
+@pytest.mark.parametrize('s', ['os.chmod("file")'])
 def test_chmod_invalid_raise(mocker, platform, enabled_platform, s):
-    mocker.patch('platform.system', lambda: platform)
+    mocker.patch('platform.system', return_value=platform)
 
     if enabled_platform:
         with pytest.raises(RuntimeError):

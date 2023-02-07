@@ -47,13 +47,10 @@ def configure_plugin(arg):
 # ==============================================================================
 
 
-@pytest.mark.parametrize(
-    'arg',
-    ('No', 'True', '0o644', '0o644,'),
-)
+@pytest.mark.parametrize('arg', ['No', 'True', '0o644', '0o644,'])
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'os.open("file.txt")',
         'os.open("file.txt", flags, mode)',
         'os.open("file.txt", os.O_RDONLY)',
@@ -112,7 +109,7 @@ def configure_plugin(arg):
         'with bla.open("file.txt", flags=os.O_RDONLY | os.O_NOFOLLOW, mode=mode) as fd: fd.read()',
         'with bla.open("file.txt", flags=os.O_RDONLY | os.O_NOFOLLOW, mode=0o644) as fd: fd.read()',
         'with bla.open("file.txt", flags=os.O_RDONLY | os.O_NOFOLLOW, mode=0o777) as fd: fd.read()',
-    ),
+    ],
 )
 def test_ok(s, arg):
     configure_plugin(arg)
@@ -124,11 +121,11 @@ def test_ok(s, arg):
 
 @pytest.mark.parametrize('mode', range(0o756, 0o777 + 1), ids=lambda arg: oct(arg))
 @pytest.mark.parametrize(
-    'arg, expected_warning',
-    (
+    ('arg', 'expected_warning'),
+    [
         ('False', False),
         ('True', True),
-    ),
+    ],
 )
 def test_os_open_call_default_modes(mode, arg, expected_warning):
     configure_plugin(arg)
@@ -145,18 +142,18 @@ def test_os_open_call_default_modes(mode, arg, expected_warning):
 @pytest.mark.parametrize('mode', range(0o750, 0o761), ids=lambda arg: oct(arg))
 @pytest.mark.parametrize(
     'call_mode',
-    (
+    [
         'os.open("file.txt", os.O_WRONLY, 0o{:o})',
         'os.open("file.txt", flags=os.O_WRONLY, mode=0o{:o})',
-    ),
+    ],
     ids=('args', 'keyword'),
 )
 @pytest.mark.parametrize(
-    'arg, expected_warning',
-    (
+    ('arg', 'expected_warning'),
+    [
         ('False', False),
         ('0o755,', True),
-    ),
+    ],
     ids=('False-False', '[0o755]-True'),
 )
 def test_os_open_call(mode, call_mode, arg, expected_warning):
@@ -175,18 +172,18 @@ def test_os_open_call(mode, call_mode, arg, expected_warning):
 @pytest.mark.parametrize('mode', range(0o756, 0o777 + 1), ids=lambda arg: oct(arg))
 @pytest.mark.parametrize(
     'call_mode',
-    (
+    [
         'with os.open("file.txt", os.O_WRONLY, 0o{:o}) as fd: fd.read()',
         'with os.open("file.txt", flags=os.O_WRONLY, mode=0o{:o}) as fd: fd.read()',
-    ),
+    ],
     ids=('args', 'keyword'),
 )
 @pytest.mark.parametrize(
-    'arg, expected_warning',
-    (
+    ('arg', 'expected_warning'),
+    [
         ('False', False),
         ('True', True),
-    ),
+    ],
 )
 def test_os_open_with_default_modes(mode, call_mode, arg, expected_warning):
     configure_plugin(arg)
@@ -203,11 +200,11 @@ def test_os_open_with_default_modes(mode, call_mode, arg, expected_warning):
 
 @pytest.mark.parametrize('mode', range(0o750, 0o761), ids=lambda arg: oct(arg))
 @pytest.mark.parametrize(
-    'arg, expected_warning',
-    (
+    ('arg', 'expected_warning'),
+    [
         ('False', False),
         ('0o755,', True),
-    ),
+    ],
 )
 def test_os_open_with(mode, arg, expected_warning):
     configure_plugin(arg)

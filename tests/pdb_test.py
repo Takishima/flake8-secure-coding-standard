@@ -23,21 +23,14 @@ def results(s):
     return {'{}:{}: {}'.format(*r) for r in flake8_scs.Plugin(ast.parse(s)).run()}
 
 
-@pytest.mark.parametrize(
-    's',
-    (
-        '',
-        'int(0)',
-        'foo()',
-    ),
-)
+@pytest.mark.parametrize('s', ['', 'int(0)', 'foo()'])
 def test_pdb_ok(s):
     assert results(s) == set()
 
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'import pdb',
         'import pdb, six',
         'from pdb import set_trace',
@@ -45,7 +38,7 @@ def test_pdb_ok(s):
         'pdb.post_mortem(traceback=None)',
         'pdb.Pdb(skip=["django.*"])',
         'Pdb(skip=["django.*"])',
-    ),
+    ],
 )
 def test_pdb_not_ok(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS107}

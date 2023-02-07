@@ -25,11 +25,11 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'pickle.dump(data, "file.txt")',
         'pickle.dumps(data)',
-    ),
+    ],
 )
 def test_ok(s):
     assert results(s) == set()
@@ -37,14 +37,14 @@ def test_ok(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'pickle.load("file.txt")',
         r'pickle.loads(b"\x80\x04K\x01.")',
         'pickle.loads(data)',
         'from pickle import load',
         'from pickle import loads',
         'from pickle import dump, load',
-    ),
+    ],
 )
 def test_not_ok(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS113}

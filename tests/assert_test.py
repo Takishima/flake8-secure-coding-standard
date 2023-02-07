@@ -25,7 +25,7 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    ('',),
+    [''],
 )
 def test_assert_ok(s):
     assert results(s) == set()
@@ -33,10 +33,10 @@ def test_assert_ok(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'assert len(s) > 0',
         'assert (my_set and my_list), "Some message"',
-    ),
+    ],
 )
 def test_assert_not_ok(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS108}

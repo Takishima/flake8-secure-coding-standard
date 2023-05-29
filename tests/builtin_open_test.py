@@ -25,7 +25,7 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'open("file.txt")',
         'bla.open("file.txt")',
@@ -33,7 +33,7 @@ def results(s):
         'with open("file.txt") as fd: fd.read()',
         'with bla.open("file.txt") as fd: fd.read()',
         'with bla.open("file.txt", "w") as fd: fd.read()',
-    ),
+    ],
 )
 def test_builtin_open_ok(s):
     assert results(s) == set()
@@ -41,7 +41,7 @@ def test_builtin_open_ok(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'open("file.txt", "w")',
         'open("file.txt", "wb")',
         'open("file.txt", "bw")',
@@ -82,7 +82,7 @@ def test_builtin_open_ok(s):
         'with open("file.txt", mode="xb") as fd: fd.read()',
         'with open("file.txt", mode="bx") as fd: fd.read()',
         'with open("file.txt", mode=mode) as fd: fd.read()',
-    ),
+    ],
 )
 def test_builtin_open_not_ok(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS109}

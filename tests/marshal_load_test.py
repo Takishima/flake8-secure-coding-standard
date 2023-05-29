@@ -25,11 +25,11 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'marshal.dump(data, "file.txt")',
         'marshal.dumps(data)',
-    ),
+    ],
 )
 def test_ok(s):
     assert results(s) == set()
@@ -37,14 +37,14 @@ def test_ok(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'marshal.load("file.txt")',
         r'marshal.loads(b"\xe9\x01\x00\x00\x00")',
         'marshal.loads(data)',
         'from marshal import load',
         'from marshal import loads',
         'from marshal import dump, load',
-    ),
+    ],
 )
 def test_not_ok(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS114}

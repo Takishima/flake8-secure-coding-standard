@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Repository
+
+-   Replace most Python pre-commit hooks with [ruff](https://beta.ruff.rs/docs/)
+-   Update `Lucas-C/pre-commit-hooks` hook to v1.5.1
+-   Update `black` hook to v23.3.0
+-   Update `yamllint` hook to v1.32.0
+-   Update `codespell` hook to v2.2.4
+
 ## [v1.4.0] - 2023-02-06
 
 ### Changed

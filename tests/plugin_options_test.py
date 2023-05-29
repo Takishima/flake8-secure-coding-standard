@@ -67,8 +67,8 @@ def _id_func(arg):
 
 
 @pytest.mark.parametrize(
-    'arg, expected',
-    (
+    ('arg', 'expected'),
+    [
         ('0', 0),
         ('false', None),
         ('False', None),
@@ -87,7 +87,7 @@ def _id_func(arg):
         ('0o755', 0o755),
         ('0o755,', [0o755]),
         ('0o644, 0o755,', [0o644, 0o755]),
-    ),
+    ],
     ids=_id_func,
 )
 def test_read_octal_mode_option(arg, expected):
@@ -95,22 +95,22 @@ def test_read_octal_mode_option(arg, expected):
     assert flake8_scs._read_octal_mode_option('test', arg, _default_modes) == expected
 
 
-@pytest.mark.parametrize('arg', ('', ',', ',,', 'nope', 'asd', 'a,', '493, a'))
+@pytest.mark.parametrize('arg', ['', ',', ',,', 'nope', 'asd', 'a,', '493, a'])
 def test_read_octal_mode_option_invalid(arg):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='^(Invalid value for|Calculated empty value for|Unable to convert).*'):
         flake8_scs._read_octal_mode_option('test', arg, _default_modes)
 
 
-@pytest.mark.parametrize('function', ('open', 'mkdir', 'mkfifo', 'mknod'))
+@pytest.mark.parametrize('function', ['open', 'mkdir', 'mkfifo', 'mknod'])
 @pytest.mark.parametrize(
-    'arg, allowed_modes',
-    (
+    ('arg', 'allowed_modes'),
+    [
         ('n', []),
         ('y', _default_modes),
         ('0', []),
         ('0o755', _default_modes),
         ('0o644, 0o755,', [0o644, 0o755]),
-    ),
+    ],
     ids=_id_func,
 )
 def test_os_allowed_mode(function, arg, allowed_modes):

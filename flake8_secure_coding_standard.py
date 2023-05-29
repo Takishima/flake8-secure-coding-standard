@@ -23,7 +23,7 @@ from typing import Any, AnyStr, Dict, Generator, List, Tuple, Type, Union
 
 import flake8.options.manager
 
-ast_Constant = ast.Constant
+ast_Constant = ast.Constant  # noqa: N816
 
 _use_optparse = tuple(int(s) for s in importlib.metadata.version('flake8').split('.')) < (3, 8, 0)
 
@@ -199,10 +199,10 @@ def _is_builtin_open_for_writing(node: ast.Call) -> bool:
                     break
         if any(m in mode for m in 'awx'):
             # Cover:
-            #  * open(..., "w")
-            #  * open(..., "wb")
-            #  * open(..., "a")
-            #  * open(..., "x")
+            #  * open(..., "w").
+            #  * open(..., "wb").
+            #  * open(..., "a").
+            #  * open(..., "x").
             return True
     return False
 
@@ -235,6 +235,7 @@ def _is_allowed_mode(node, allowed_modes, args_idx):
 
 
 def _is_shell_true_call(node: ast.Call) -> bool:
+    _n_args_max = 8
     if not (isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name)):
         return False
 
@@ -244,7 +245,11 @@ def _is_shell_true_call(node: ast.Call) -> bool:
             for keyword in node.keywords:
                 if keyword.arg == 'shell' and isinstance(keyword.value, ast_Constant) and bool(keyword.value.value):
                     return True
-            if len(node.args) > 8 and isinstance(node.args[8], ast_Constant) and bool(node.args[8].value):
+            if (
+                len(node.args) > _n_args_max
+                and isinstance(node.args[_n_args_max], ast_Constant)
+                and bool(node.args[_n_args_max].value)
+            ):
                 return True
         if node.func.attr in ('getoutput', 'getstatusoutput'):
             return True
@@ -259,83 +264,79 @@ def _is_shell_true_call(node: ast.Call) -> bool:
 
 
 def _is_pdb_call(node: ast.Call) -> bool:
-    if isinstance(node.func, ast.Attribute):
-        if isinstance(node.func.value, ast.Name) and node.func.value.id == 'pdb':
-            # Cover:
-            #  * pdb.func()
-            return True
-    if isinstance(node.func, ast.Name):
-        if node.func.id == 'Pdb':
-            # Cover:
-            # * Pdb()
-            return True
+    if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name) and node.func.value.id == 'pdb':
+        # Cover:
+        #  * pdb.func().
+        return True
+    if isinstance(node.func, ast.Name) and node.func.id == 'Pdb':
+        # Cover:
+        # * Pdb().
+        return True
     return False
 
 
 def _is_mktemp_call(node: ast.Call) -> bool:
-    if isinstance(node.func, ast.Attribute):
-        if node.func.attr == 'mktemp':
-            # Cover:
-            #  * tempfile.mktemp()
-            #  * xxxx.mktemp()
-            return True
-    if isinstance(node.func, ast.Name):
-        if node.func.id == 'mktemp':
-            # Cover:
-            #  * mktemp()
-            return True
+    if isinstance(node.func, ast.Attribute) and node.func.attr == 'mktemp':
+        # Cover:
+        #  * tempfile.mktemp().
+        #  * xxxx.mktemp().
+        return True
+    if isinstance(node.func, ast.Name) and node.func.id == 'mktemp':
+        # Cover:
+        #  * mktemp().
+        return True
     return False
 
 
 def _is_yaml_unsafe_call(node: ast.Call) -> bool:
+    _n_args_max = 2
     _safe_loaders = ('BaseLoader', 'SafeLoader')
     _unsafe_loaders = ('Loader', 'UnsafeLoader', 'FullLoader')
     if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name) and node.func.value.id == 'yaml':
         if node.func.attr in ('unsafe_load', 'full_load'):
             # Cover:
-            #  * yaml.full_load()
-            #  * yaml.unsafe_load()
+            #  * yaml.full_load().
+            #  * yaml.unsafe_load().
             return True
         if node.func.attr == 'load':
             for keyword in node.keywords:
                 if keyword.arg == 'Loader' and isinstance(keyword.value, ast.Name):
                     if keyword.value.id in _unsafe_loaders:
                         # Cover:
-                        #  * yaml.load(x, Loader=Loader)
-                        #  * yaml.load(x, Loader=UnsafeLoader)
-                        #  * yaml.load(x, Loader=FullLoader)
+                        #  * yaml.load(x, Loader=Loader).
+                        #  * yaml.load(x, Loader=UnsafeLoader).
+                        #  * yaml.load(x, Loader=FullLoader).
                         return True
                     if keyword.value.id in _safe_loaders:
                         # Cover:
-                        #  * yaml.load(x, Loader=BaseLoader)
-                        #  * yaml.load(x, Loader=SafeLoader)
+                        #  * yaml.load(x, Loader=BaseLoader).
+                        #  * yaml.load(x, Loader=SafeLoader).
                         return False
 
             if (
-                len(node.args) < 2  # pylint: disable=too-many-boolean-expressions
+                len(node.args) < _n_args_max  # pylint: disable=too-many-boolean-expressions
                 or (isinstance(node.args[1], ast.Name) and node.args[1].id in _unsafe_loaders)
                 or (
                     isinstance(node.args[1], ast.Attribute)
-                    and node.args[1].value.id == "yaml"
+                    and node.args[1].value.id == 'yaml'
                     and node.args[1].attr in _unsafe_loaders
                 )
             ):
                 # Cover:
-                #  * yaml.load(x)
-                #  * yaml.load(x, Loader)
-                #  * yaml.load(x, UnsafeLoader)
-                #  * yaml.load(x, FullLoader)
-                #  * yaml.load(x, yaml.Loader)
-                #  * yaml.load(x, yaml.UnsafeLoader)
-                #  * yaml.load(x, yaml.FullLoader)
+                #  * yaml.load(x).
+                #  * yaml.load(x, Loader).
+                #  * yaml.load(x, UnsafeLoader).
+                #  * yaml.load(x, FullLoader).
+                #  * yaml.load(x, yaml.Loader).
+                #  * yaml.load(x, yaml.UnsafeLoader).
+                #  * yaml.load(x, yaml.FullLoader).
                 return True
 
-    if isinstance(node.func, ast.Name):
-        if node.func.id in ('unsafe_load', 'full_load'):
-            # Cover:
-            #  * unsafe_load(...)
-            #  * full_load(...)
-            return True
+    if isinstance(node.func, ast.Name) and node.func.id in ('unsafe_load', 'full_load'):
+        # Cover:
+        #  * unsafe_load(...).
+        #  * full_load(...).
+        return True
     return False
 
 
@@ -463,7 +464,7 @@ class Visitor(ast.NodeVisitor):
         self.errors: List[Tuple[int, int, str]] = []
         self._from_imports: Dict[str, str] = {}
 
-    def visit_Call(self, node: ast.Call) -> None:  # pylint: disable=too-many-branches
+    def visit_Call(self, node: ast.Call) -> None:  # pylint: disable=too-many-branches # noqa: PLR0912
         """Visitor method called for ast.Call nodes."""
         if _is_pdb_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS107))
@@ -528,8 +529,8 @@ class Visitor(ast.NodeVisitor):
         for alias in node.names:
             if alias.name == 'pdb':
                 # Cover:
-                #  * import pdb
-                #  * import pdb as xxx
+                #  * import pdb.
+                #  * import pdb as xxx.
                 self.errors.append((node.lineno, node.col_offset, SCS107))
 
         self.generic_visit(node)
@@ -539,51 +540,51 @@ class Visitor(ast.NodeVisitor):
         for alias in node.names:
             if (node.module is None and alias.name == 'pdb') or node.module == 'pdb':
                 # Cover:
-                #  * from pdb import xxx
+                #  * from pdb import xxx.
                 self.errors.append((node.lineno, node.col_offset, SCS107))
             elif node.module == 'tempfile' and alias.name == 'mktemp':
                 # Cover:
-                #  * from tempfile import mktemp
+                #  * from tempfile import mktemp.
                 self.errors.append((node.lineno, node.col_offset, SCS104))
             elif node.module in ('os.path', 'op') and alias.name in ('relpath', 'abspath'):
                 # Cover:
-                #  * from os.path import relpath, abspath
-                #  * import os.path as op; from op import relpath, abspath
+                #  * from os.path import relpath, abspath.
+                #  * import os.path as op; from op import relpath, abspath.
                 self.errors.append((node.lineno, node.col_offset, SCS100))
             elif (node.module == 'subprocess' and alias.name in ('getoutput', 'getstatusoutput')) or (
                 node.module == 'asyncio' and alias.name == 'create_subprocess_shell'
             ):
                 # Cover:
-                # * from subprocess import getoutput
-                # * from subprocess import getstatusoutput
-                # * from asyncio import create_subprocess_shell
+                # * from subprocess import getoutput.
+                # * from subprocess import getstatusoutput.
+                # * from asyncio import create_subprocess_shell.
                 self.errors.append((node.lineno, node.col_offset, SCS103))
             elif node.module == 'os' and alias.name == 'system':
                 # Cover:
-                # * from os import system
+                # * from os import system.
                 self.errors.append((node.lineno, node.col_offset, SCS102))
             elif node.module == 'os' and alias.name == 'popen':
                 # Cover:
-                # * from os import popen
+                # * from os import popen.
                 self.errors.append((node.lineno, node.col_offset, SCS110))
             elif not _is_posix() and node.module == 'shlex' and alias.name == 'quote':
                 # Cover:
-                # * from shlex import quote
-                # * from shlex import quote as quoted
+                # * from shlex import quote.
+                # * from shlex import quote as quoted.
                 self.errors.append((node.lineno, node.col_offset, SCS111))
             elif node.module == 'pickle' and alias.name in ('load', 'loads'):
                 # Cover:
-                # * from pickle import load
-                # * from pickle import loads as load
+                # * from pickle import load.
+                # * from pickle import loads as load.
                 self.errors.append((node.lineno, node.col_offset, SCS113))
             elif node.module == 'marshal' and alias.name in ('load', 'loads'):
                 # Cover:
-                # * from marshal import load
-                # * from marshal import loads as load
+                # * from marshal import load.
+                # * from marshal import loads as load.
                 self.errors.append((node.lineno, node.col_offset, SCS114))
             elif node.module == 'shelve' and alias.name == 'open':
                 # Cover:
-                # * from shelve import open
+                # * from shelve import open.
                 self.errors.append((node.lineno, node.col_offset, SCS115))
         self.generic_visit(node)
 
@@ -617,46 +618,46 @@ class Plugin:  # pylint: disable=R0903
         self._tree = tree
 
     @classmethod
-    def add_options(cls, option_manager: flake8.options.manager.OptionManager) -> None:
+    def add_options(cls: Type['Plugin'], option_manager: flake8.options.manager.OptionManager) -> None:
         """Add command line options."""
         options_data = (
             (
-                "--os-mkdir-mode",
+                '--os-mkdir-mode',
                 {
                     'type': str,
                     'parse_from_config': True,
                     'default': False,
-                    'dest': "os_mkdir_mode",
+                    'dest': 'os_mkdir_mode',
                     'help': "If provided, configure how 'mode' parameter of the os.mkdir() function are handled",
                 },
             ),
             (
-                "--os-mkfifo-mode",
+                '--os-mkfifo-mode',
                 {
                     'type': str,
                     'parse_from_config': True,
                     'default': False,
-                    'dest': "os_mkfifo_mode",
+                    'dest': 'os_mkfifo_mode',
                     'help': "If provided, configure how 'mode' parameter of the os.mkfifo() function are handled",
                 },
             ),
             (
-                "--os-mknod-mode",
+                '--os-mknod-mode',
                 {
                     'type': str,
                     'parse_from_config': True,
                     'default': False,
-                    'dest': "os_mknod_mode",
+                    'dest': 'os_mknod_mode',
                     'help': "If provided, configure how 'mode' parameter of the os.mknod() function are handled",
                 },
             ),
             (
-                "--os-open-mode",
+                '--os-open-mode',
                 {
                     'type': str,
                     'parse_from_config': True,
                     'default': False,
-                    'dest': "os_open_mode",
+                    'dest': 'os_open_mode',
                     'help': "If provided, configure how 'mode' parameter of the os.open() function are handled",
                 },
             ),
@@ -669,7 +670,7 @@ class Plugin:  # pylint: disable=R0903
 
     @classmethod
     def add_options_optparse(
-        cls, option_manager: flake8.options.manager.OptionManager, options_data
+        cls: Type['Plugin'], option_manager: flake8.options.manager.OptionManager, options_data: tuple
     ) -> None:  # pragma: no cover
         """Add command line options using optparse."""
 
@@ -682,13 +683,15 @@ class Plugin:  # pylint: disable=R0903
             option_manager.add_option(opt_str, **{**kwargs, **callback})
 
     @classmethod
-    def add_options_argparse(cls, option_manager: flake8.options.manager.OptionManager, options_data) -> None:
+    def add_options_argparse(
+        cls: Type['Plugin'], option_manager: flake8.options.manager.OptionManager, options_data: tuple
+    ) -> None:
         """Add command line options using argparse."""
 
         class OctalModeAction(argparse.Action):
             """Action class for octal mode options."""
 
-            def __call__(self, parser, namespace, values, option_string=None):
+            def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
                 setattr(namespace, self.dest, _read_octal_mode_option(self.dest, values, _DEFAULT_MAX_MODE))
 
         action = {'action': OctalModeAction}
@@ -696,7 +699,7 @@ class Plugin:  # pylint: disable=R0903
             option_manager.add_option(opt_str, **{**kwargs, **action})
 
     @classmethod
-    def parse_options(cls, options) -> None:
+    def parse_options(cls: Type['Plugin'], options: argparse.Namespace) -> None:
         """Parse command line options."""
 
         def _set_mode_option(name, modes):

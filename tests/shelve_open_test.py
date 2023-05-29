@@ -25,16 +25,16 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    ('',),
+    [''],
 )
 def test_ok(s):
     assert results(s) == set()
 
 
-_not_ok = (
+_not_ok = [
     'shelve.open("file.txt")',
     'shelve.open(filename)',
-)
+]
 
 
 @pytest.mark.parametrize('s', _not_ok)
@@ -47,6 +47,6 @@ def test_shelve_open_with(s):
     assert results(f'with {s} as fd: fd.read()') == {'1:0: ' + flake8_scs.SCS115}
 
 
-@pytest.mark.parametrize('s', ('from shelve import open',))
+@pytest.mark.parametrize('s', ['from shelve import open'])
 def test_shelve_open_importfrom(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS115}

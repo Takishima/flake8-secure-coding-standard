@@ -25,14 +25,14 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'yaml.safe_load("!!python/object/new:os.system [echo EXPLOIT!]")',
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", Loader=BaseLoader)',
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", Loader=SafeLoader)',
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", BaseLoader)',
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", SafeLoader)',
-    ),
+    ],
 )
 def test_ok(s):
     assert results(s) == set()
@@ -40,7 +40,7 @@ def test_ok(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'full_load("!!python/object/new:os.system [echo EXPLOIT!]")',
         'unsafe_load("!!python/object/new:os.system [echo EXPLOIT!]")',
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]")',
@@ -55,7 +55,7 @@ def test_ok(s):
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", yaml.Loader)',
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", yaml.UnsafeLoader)',
         'yaml.load("!!python/object/new:os.system [echo EXPLOIT!]", yaml.FullLoader)',
-    ),
+    ],
 )
 def test_abspath(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS105}

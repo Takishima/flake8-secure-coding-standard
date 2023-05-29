@@ -66,8 +66,11 @@ def configure_plugin(function, arg):
 
     option = OptionValue(
         **{
-            **{'os_mkdir_mode': False, 'os_mkfifo_mode': False, 'os_mknod_mode': False, 'os_open_mode': False},
-            **{f'os_{function}_mode': mode},
+            'os_mkdir_mode': False,
+            'os_mkfifo_mode': False,
+            'os_mknod_mode': False,
+            'os_open_mode': False,
+            f'os_{function}_mode': mode,
         }
     )
     flake8_scs.Plugin.parse_options(option)
@@ -79,16 +82,13 @@ def configure_plugin(function, arg):
 
 @pytest.mark.parametrize(
     'platform',
-    ('Linux', 'Darwin', 'Java', 'Windows'),
+    ['Linux', 'Darwin', 'Java', 'Windows'],
 )
-@pytest.mark.parametrize('function', ('mkdir', 'mkfifo', 'mknod'))
-@pytest.mark.parametrize(
-    'option',
-    ('False', 'True'),
-)
+@pytest.mark.parametrize('function', ['mkdir', 'mkfifo', 'mknod'])
+@pytest.mark.parametrize('option', ['False', 'True'])
 @pytest.mark.parametrize(
     's',
-    (
+    [
         # mkdir
         'os.mkdir("/tmp/test")',
         'os.mkdir(dir_name)',
@@ -111,36 +111,33 @@ def configure_plugin(function, arg):
         'os.mknod(dir_name)',
         'os.mknod(dir_name, 0o644)',
         'os.mknod(dir_name, mode=mode)',
-    ),
+    ],
 )
 def test_os_function_ok(mocker, platform, function, option, s):
     configure_plugin(function, option)
-    mocker.patch('platform.system', lambda: platform)
+    mocker.patch('platform.system', return_value=platform)
 
     assert results(s) == set()
 
 
 @pytest.mark.parametrize(
-    'platform, enabled_platform',
-    (
+    ('platform', 'enabled_platform'),
+    [
         ('Linux', True),
         ('Darwin', True),
         ('Java', False),
         ('Windows', False),
-    ),
+    ],
 )
+@pytest.mark.parametrize('option', ['False', 'True'])
 @pytest.mark.parametrize(
-    'option',
-    ('False', 'True'),
-)
-@pytest.mark.parametrize(
-    'function, s', ((function, s) for function, tests in _os_function_strings.items() for s in tests)
+    ('function', 's'), [(function, s) for function, tests in _os_function_strings.items() for s in tests]
 )
 def test_os_function_call(mocker, platform, enabled_platform, function, option, s):
     _msg_map = {'mkdir': flake8_scs.SCS116, 'mkfifo': flake8_scs.SCS117, 'mknod': flake8_scs.SCS118}
 
     configure_plugin(function, option)
-    mocker.patch('platform.system', lambda: platform)
+    mocker.patch('platform.system', return_value=platform)
 
     flake8_warnings = results(s)
     if enabled_platform and option == 'True':

@@ -25,13 +25,13 @@ def results(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         '',
         'from os import realpath',
         'os.path.realpath(variable)',
         'os.path.realpath("/opt/file.txt")',
         'os.path.realpath("../file.txt")',
-    ),
+    ],
 )
 def test_ok(s):
     assert results(s) == set()
@@ -39,7 +39,7 @@ def test_ok(s):
 
 @pytest.mark.parametrize(
     's',
-    (
+    [
         'from os.path import abspath',
         'from os.path import relpath',
         'from os.path import join, relpath',
@@ -51,7 +51,7 @@ def test_ok(s):
         'op.abspath("../file.txt")',
         'op.relpath("file.txt")',
         'op.relpath("file.txt", start="/")',
-    ),
+    ],
 )
 def test_abspath(s):
     assert results(s) == {'1:0: ' + flake8_scs.SCS100}

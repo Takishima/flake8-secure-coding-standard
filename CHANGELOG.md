@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `pyupgrade` hook to v3.3.1
 - Update `yamllint` hook to v1.29.0
 
-## [1.3.0] - 2022-06-02
+## [v1.3.0] - 2022-06-02
 
 ### Added
 
@@ -74,7 +74,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `codespell` pre-commit hook
 - Add `yamllint` configuration file and pre-commit hook
 
-## [1.2.2] - 2022-05-24
+## [v1.2.2] - 2022-05-24
 
 ### Updated
 
@@ -97,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `thomaseizinger/keep-a-changelog-new-release` GitHub action to v1.3.0
 - Update GitHub's CodeQL action to v2
 
-## [1.2.1] - 2021-07-19
+## [v1.2.1] - 2021-07-19
 
 - Reworded SCS103 and extend it to include a few more cases:
   - `subprocess.getoutput()`
@@ -105,12 +105,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `asyncio.create_subprocess_shell()`
   - `loop.subprocess_shell()`
 
-## [1.2.0] - 2021-07-19
+## [v1.2.0] - 2021-07-19
 
 - Added SCS110 to avoid using `os.popen()` as it internally uses `subprocess.Popen` with `shell=True`
 - Added SCS111 to avoid using `shlex.quote()` on non-POSIX platforms.
 
-## [1.1.0] - 2021-07-02
+## [v1.1.0] - 2021-07-02
 
 ### Added
 
@@ -120,23 +120,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Update pre-commit configuration
 
-## [1.0.1] - 2021-06-21
+## [v1.0.1] - 2021-06-21
 
 ### Updated
 
 - Updated error messages to be more in line with README
 - Updated README
 
-## [1.0.0] - 2021-06-20
+## [v1.0.0] - 2021-06-20
 
 Initial release
 
-[1.0.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/c18cc7130a40405bd92e49b22675e8ddbe0bc8cd...v1.0.0
-[1.0.1]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.0.0...v1.0.1
-[1.1.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.0.1...v1.1.0
-[1.2.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.1.0...v1.2.0
-[1.2.1]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.0...v1.2.1
-[1.2.2]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.1...v1.2.2
-[1.3.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.2...v1.3.0
 [unreleased]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.4.0...HEAD
+[v1.0.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/c18cc7130a40405bd92e49b22675e8ddbe0bc8cd...v1.0.0
+[v1.0.1]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.0.0...v1.0.1
+[v1.1.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.0.1...v1.1.0
+[v1.2.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.1.0...v1.2.0
+[v1.2.1]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.0...v1.2.1
+[v1.2.2]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.1...v1.2.2
+[v1.3.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.2.2...v1.3.0
 [v1.4.0]: https://github.com/Takishima/flake8-secure-coding-standard/compare/v1.3.0...v1.4.0

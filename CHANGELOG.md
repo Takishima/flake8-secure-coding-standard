@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
@@ -12,10 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace most Python pre-commit hooks with [ruff](https://beta.ruff.rs/docs/)
 - Update release drafting GitHub workflow
 - Modify pull requests workflow to automatically update CHANGELOG file if it was created by pre-commit.ci
-- Update `Lucas-C/pre-commit-hooks` hook to v1.5.1
 - Update `black` hook to v23.3.0
-- Update `yamllint` hook to v1.32.0
+- Update `charliermarsh/ruff-pre-commit` hook to v0.0.272
 - Update `codespell` hook to v2.2.4
+- Update `Lucas-C/pre-commit-hooks` hook to v1.5.1
+- Update `yamllint` hook to v1.32.0
 
 ## [v1.4.0] - 2023-02-06
 

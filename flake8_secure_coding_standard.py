@@ -14,12 +14,14 @@
 
 """Main file for the flake8_secure_coding_standard plugin."""
 
+from __future__ import annotations
+
 import ast
 import importlib.metadata
 import operator
 import platform
 import stat
-from typing import Any, AnyStr, Dict, Generator, List, Tuple, Type, Union
+from typing import Any, AnyStr, ClassVar, Generator
 
 import flake8.options.manager
 
@@ -150,7 +152,7 @@ _is_unix = _is_posix
 # ------------------------------------------------------------------------------
 
 
-def _is_function_call(node: ast.Call, module: AnyStr, function: Union[List[AnyStr], Tuple[AnyStr], AnyStr]) -> bool:
+def _is_function_call(node: ast.Call, module: AnyStr, function: list[AnyStr] | tuple[AnyStr] | AnyStr) -> bool:
     if not isinstance(function, (list, tuple)):
         function = (function,)
     return (
@@ -434,16 +436,16 @@ def _chmod_has_wx_for_go(node):
 class Visitor(ast.NodeVisitor):
     """AST visitor class for the plugin."""
 
-    os_mkdir_modes_allowed = []
-    os_mkdir_modes_msg_arg = ''
-    os_mkfifo_modes_allowed = []
-    os_mkfifo_modes_msg_arg = ''
-    os_mknod_modes_allowed = []
-    os_mknod_modes_msg_arg = ''
-    os_open_modes_allowed = []
-    os_open_modes_msg_arg = ''
+    os_mkdir_modes_allowed: ClassVar[list[int]] = []
+    os_mkdir_modes_msg_arg: ClassVar[str] = ''
+    os_mkfifo_modes_allowed: ClassVar[list[int]] = []
+    os_mkfifo_modes_msg_arg: ClassVar[str] = ''
+    os_mknod_modes_allowed: ClassVar[list[int]] = []
+    os_mknod_modes_msg_arg: ClassVar[str] = ''
+    os_open_modes_allowed: ClassVar[list[int]] = []
+    os_open_modes_msg_arg: ClassVar[str] = ''
 
-    mode_msg_map = {
+    mode_msg_map: ClassVar[dict[str, str]] = {
         SCS112: 'open',
         SCS116: 'mkdir',
         SCS117: 'mkfifo',
@@ -461,8 +463,8 @@ class Visitor(ast.NodeVisitor):
 
     def __init__(self) -> None:
         """Initialize a Visitor object."""
-        self.errors: List[Tuple[int, int, str]] = []
-        self._from_imports: Dict[str, str] = {}
+        self.errors: list[tuple[int, int, str]] = []
+        self._from_imports: dict[str, str] = {}
 
     def visit_Call(self, node: ast.Call) -> None:  # pylint: disable=too-many-branches # noqa: PLR0912
         """Visitor method called for ast.Call nodes."""
@@ -618,9 +620,9 @@ class Plugin:  # pylint: disable=R0903
         self._tree = tree
 
     @classmethod
-    def add_options(cls: Type['Plugin'], option_manager: flake8.options.manager.OptionManager) -> None:
+    def add_options(cls: type[Plugin], option_manager: flake8.options.manager.OptionManager) -> None:
         """Add command line options."""
-        options_data = (
+        options_data: ClassVar[dict[str, dict[str, str | bool]]] = (
             (
                 '--os-mkdir-mode',
                 {
@@ -670,7 +672,7 @@ class Plugin:  # pylint: disable=R0903
 
     @classmethod
     def add_options_optparse(
-        cls: Type['Plugin'], option_manager: flake8.options.manager.OptionManager, options_data: tuple
+        cls: type[Plugin], option_manager: flake8.options.manager.OptionManager, options_data: tuple
     ) -> None:  # pragma: no cover
         """Add command line options using optparse."""
 
@@ -684,7 +686,7 @@ class Plugin:  # pylint: disable=R0903
 
     @classmethod
     def add_options_argparse(
-        cls: Type['Plugin'], option_manager: flake8.options.manager.OptionManager, options_data: tuple
+        cls: type[Plugin], option_manager: flake8.options.manager.OptionManager, options_data: tuple
     ) -> None:
         """Add command line options using argparse."""
 
@@ -699,7 +701,7 @@ class Plugin:  # pylint: disable=R0903
             option_manager.add_option(opt_str, **{**kwargs, **action})
 
     @classmethod
-    def parse_options(cls: Type['Plugin'], options: argparse.Namespace) -> None:
+    def parse_options(cls: type[Plugin], options: argparse.Namespace) -> None:
         """Parse command line options."""
 
         def _set_mode_option(name, modes):
@@ -717,7 +719,7 @@ class Plugin:  # pylint: disable=R0903
         _set_mode_option('mknod', options.os_mknod_mode)
         _set_mode_option('open', options.os_open_mode)
 
-    def run(self) -> Generator[Tuple[int, int, str, Type[Any]], None, None]:
+    def run(self) -> Generator[tuple[int, int, str, type[Any]], None, None]:
         """Entry point for flake8."""
         visitor = Visitor()
         visitor.visit(self._tree)

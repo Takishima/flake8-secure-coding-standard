@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace most Python pre-commit hooks with [ruff](https://beta.ruff.rs/docs/)
 - Update release drafting GitHub workflow
 - Modify pull requests workflow to automatically update CHANGELOG file if it was created by pre-commit.ci
-- Update `asottile/blacken-docs` hook to v1.14.0
+- Update `asottile/blacken-docs` hook to v1.15.0
+- Update `astral-sh/ruff-pre-commit` to v0.0.278
 - Update `charliermarsh/ruff-pre-commit` hook to v0.0.275
 - Update `codespell-project/codespell` hook to v2.2.5
 - Update `Lucas-C/pre-commit-hooks` hook to v1.5.1
+- Update `psf/black` hook to v23.7.0
 - Update `yamllint` hook to v1.32.0
 
 ## [v1.4.0] - 2023-02-06

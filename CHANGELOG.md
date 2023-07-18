@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace most Python pre-commit hooks with [ruff](https://beta.ruff.rs/docs/)
 - Update release drafting GitHub workflow
 - Modify pull requests workflow to automatically update CHANGELOG file if it was created by pre-commit.ci
+- Update `thomaseizinger/create-pull-request` GitHub Action to v1.3.1
 - Update `asottile/blacken-docs` hook to v1.14.0
 - Update `charliermarsh/ruff-pre-commit` hook to v0.0.275
 - Update `codespell-project/codespell` hook to v2.2.5

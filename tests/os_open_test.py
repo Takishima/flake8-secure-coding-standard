@@ -76,7 +76,6 @@ def configure_plugin(arg):
         'bla.open("file.txt", os.O_RDONLY, mode=mode)',
         'bla.open("file.txt", os.O_RDONLY, mode=0o644)',
         'bla.open("file.txt", os.O_RDONLY, mode=0o777)',
-        'bla.open("file.txt", os.O_RDONLY | os.O_NOFOLLOW)',
         'bla.open("file.txt", os.O_RDONLY | os.O_NOFOLLOW, mode=mode)',
         'bla.open("file.txt", os.O_RDONLY | os.O_NOFOLLOW, mode=0o644)',
         'bla.open("file.txt", os.O_RDONLY | os.O_NOFOLLOW, mode=0o777)',

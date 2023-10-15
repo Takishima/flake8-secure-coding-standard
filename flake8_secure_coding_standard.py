@@ -706,7 +706,7 @@ class Plugin:  # pylint: disable=R0903
 
         def _set_mode_option(name, modes):
             if isinstance(modes, int) and modes > 0:
-                setattr(Visitor, f'os_{name}_modes_allowed', list(range(0, modes + 1)))
+                setattr(Visitor, f'os_{name}_modes_allowed', list(range(modes + 1)))
                 setattr(Visitor, f'os_{name}_modes_msg_arg', f'0 < mode < {oct(modes)}')
             elif modes:
                 setattr(Visitor, f'os_{name}_modes_allowed', modes)

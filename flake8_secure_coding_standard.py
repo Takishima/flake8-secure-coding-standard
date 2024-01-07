@@ -23,7 +23,7 @@ import platform
 import stat
 from typing import TYPE_CHECKING, Any, AnyStr, ClassVar, Generator
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     import flake8.options.manager
 
 ast_Constant = ast.Constant  # noqa: N816

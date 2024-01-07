@@ -33,6 +33,7 @@ from itertools import starmap
 import flake8_secure_coding_standard as flake8_scs
 
 import flake8
+import flake8.options.manager
 import pytest
 
 

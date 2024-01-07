@@ -14,14 +14,15 @@
 
 import ast
 import stat
-
-import pytest
+from itertools import starmap
 
 import flake8_secure_coding_standard as flake8_scs
 
+import pytest
+
 
 def results(s):
-    return {'{}:{}: {}'.format(*r) for r in flake8_scs.Plugin(ast.parse(s)).run()}
+    return set(starmap('{}:{}: {}'.format, flake8_scs.Plugin(ast.parse(s)).run()))
 
 
 # ==============================================================================
@@ -120,7 +121,7 @@ def test_chmod_get_mode_binop(s, expected):
     ],
     ids=lambda s: s if s else '<empty>',
 )
-def test_chmod(mocker, platform, enabled_platform, fname, arg_type, forbidden, s):
+def test_chmod(mocker, platform, enabled_platform, fname, arg_type, forbidden, s):  # noqa: PLR0917
     mocker.patch('platform.system', return_value=platform)
 
     if s:

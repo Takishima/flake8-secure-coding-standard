@@ -14,14 +14,15 @@
 
 import ast
 from collections import namedtuple
-
-import pytest
+from itertools import starmap
 
 import flake8_secure_coding_standard as flake8_scs
 
+import pytest
+
 
 def results(s):
-    return {'{}:{}: {}'.format(*r) for r in flake8_scs.Plugin(ast.parse(s)).run()}
+    return set(starmap('{}:{}: {}'.format, flake8_scs.Plugin(ast.parse(s)).run()))
 
 
 # ==============================================================================
@@ -35,9 +36,9 @@ def configure_plugin(arg):
     )
     flake8_scs.Plugin.parse_options(
         OptionValue(
-            False,
-            False,
-            False,
+            False,  # noqa: FBT003
+            False,  # noqa: FBT003
+            False,  # noqa: FBT003
             mode,
         )
     )
@@ -118,7 +119,7 @@ def test_ok(s, arg):
 # ==============================================================================
 
 
-@pytest.mark.parametrize('mode', range(0o756, 0o777 + 1), ids=lambda arg: oct(arg))
+@pytest.mark.parametrize('mode', range(0o756, 0o777 + 1), ids=oct)
 @pytest.mark.parametrize(
     ('arg', 'expected_warning'),
     [
@@ -138,7 +139,7 @@ def test_os_open_call_default_modes(mode, arg, expected_warning):
 # ------------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('mode', range(0o750, 0o761), ids=lambda arg: oct(arg))
+@pytest.mark.parametrize('mode', range(0o750, 0o761), ids=oct)
 @pytest.mark.parametrize(
     'call_mode',
     [
@@ -168,7 +169,7 @@ def test_os_open_call(mode, call_mode, arg, expected_warning):
 # ==========================================================================
 
 
-@pytest.mark.parametrize('mode', range(0o756, 0o777 + 1), ids=lambda arg: oct(arg))
+@pytest.mark.parametrize('mode', range(0o756, 0o777 + 1), ids=oct)
 @pytest.mark.parametrize(
     'call_mode',
     [
@@ -197,7 +198,7 @@ def test_os_open_with_default_modes(mode, call_mode, arg, expected_warning):
 # --------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize('mode', range(0o750, 0o761), ids=lambda arg: oct(arg))
+@pytest.mark.parametrize('mode', range(0o750, 0o761), ids=oct)
 @pytest.mark.parametrize(
     ('arg', 'expected_warning'),
     [

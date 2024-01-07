@@ -14,10 +14,11 @@
 
 import ast
 from collections import namedtuple
-
-import pytest
+from itertools import starmap
 
 import flake8_secure_coding_standard as flake8_scs
+
+import pytest
 
 # ==============================================================================
 
@@ -51,7 +52,7 @@ _os_function_strings = {
 
 
 def results(s):
-    return {'{}:{}: {}'.format(*r) for r in flake8_scs.Plugin(ast.parse(s)).run()}
+    return set(starmap('{}:{}: {}'.format, flake8_scs.Plugin(ast.parse(s)).run()))
 
 
 # ==============================================================================
@@ -64,15 +65,13 @@ def configure_plugin(function, arg):
         field_names=('os_mkdir_mode', 'os_mkfifo_mode', 'os_mknod_mode', 'os_open_mode'),
     )
 
-    option = OptionValue(
-        **{
-            'os_mkdir_mode': False,
-            'os_mkfifo_mode': False,
-            'os_mknod_mode': False,
-            'os_open_mode': False,
-            f'os_{function}_mode': mode,
-        }
-    )
+    option = OptionValue(**{
+        'os_mkdir_mode': False,
+        'os_mkfifo_mode': False,
+        'os_mknod_mode': False,
+        'os_open_mode': False,
+        f'os_{function}_mode': mode,
+    })
     flake8_scs.Plugin.parse_options(option)
     assert getattr(flake8_scs.Visitor, f'os_{function}_modes_allowed') == [] if mode is None else mode
 
@@ -133,7 +132,7 @@ def test_os_function_ok(mocker, platform, function, option, s):
 @pytest.mark.parametrize(
     ('function', 's'), [(function, s) for function, tests in _os_function_strings.items() for s in tests]
 )
-def test_os_function_call(mocker, platform, enabled_platform, function, option, s):
+def test_os_function_call(mocker, platform, enabled_platform, function, option, s):  # noqa: PLR0917
     _msg_map = {'mkdir': flake8_scs.SCS116, 'mkfifo': flake8_scs.SCS117, 'mknod': flake8_scs.SCS118}
 
     configure_plugin(function, option)

@@ -163,25 +163,6 @@ convention = 'google'
         ]
 
 
-[tool.pylint]
-    [tool.pylint.master]
-    ignore-patterns = [
-        '__init__.py',
-        '.*_test.py',
-    ]
-
-    [tool.pylint.format]
-    max-line-length = 120
-
-    [tool.pylint.reports]
-    msg-template = '{path}:{line}: [{msg_id}, {obj}] {msg} ({symbol})'
-
-    [tool.pylint.messages_control]
-    disable = [
-         'invalid-name',
-    ]
-
-
 [tool.pytest.ini_options]
 minversion = '6.0'
 addopts = '-pno:warnings'
@@ -193,6 +174,3 @@ mock_use_standalone_module = true
 write_to = 'VERSION.txt'
 write_to_template = '{version}'
 local_scheme = 'no-local-version'
-
-[tool.yapf]
-column_limit = 120

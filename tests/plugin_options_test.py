@@ -48,7 +48,7 @@ def results(s):
 
 # ==============================================================================
 
-_default_modes = list(range(0, flake8_scs._DEFAULT_MAX_MODE + 1))
+_default_modes = list(range(flake8_scs._DEFAULT_MAX_MODE + 1))
 
 
 def _id_func(arg):

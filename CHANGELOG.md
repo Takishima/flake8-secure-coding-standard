@@ -14,12 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modify pull requests workflow to automatically update CHANGELOG file if it was created by pre-commit.ci
 - Update `thomaseizinger/create-pull-request` GitHub Action to v1.3.1
 - Update `asottile/blacken-docs` hook to v1.16.0
-- Update `astral-sh/ruff-pre-commit` to v0.1.7
+- Update `astral-sh/ruff-pre-commit` to v0.1.9
 - Update `charliermarsh/ruff-pre-commit` hook to v0.0.292
 - Update `codespell-project/codespell` hook to v2.2.6
 - Update `Lucas-C/pre-commit-hooks` hook to v1.5.4
 - Update `pre-commit/pre-commit-hooks` hook to v4.5.0
-- Update `psf/black` hook to v23.11.0
+- Update `psf/black` hook to v23.12.1
 - Update `yamllint` hook to v1.33.0
 
 ## [v1.4.0] - 2023-02-06

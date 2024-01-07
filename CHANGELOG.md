@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Bump maximal allowed `flake8` version to v7.x
+
 ### Repository
 
 - Replace most Python pre-commit hooks with [ruff](https://beta.ruff.rs/docs/)

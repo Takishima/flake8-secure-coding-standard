@@ -28,11 +28,13 @@
 
 
 import ast
-
-import flake8
-import pytest
+from itertools import starmap
 
 import flake8_secure_coding_standard as flake8_scs
+
+import flake8
+import flake8.options.manager
+import pytest
 
 
 def create_options_manager():
@@ -43,7 +45,7 @@ def create_options_manager():
 
 
 def results(s):
-    return {'{}:{}: {}'.format(*r) for r in flake8_scs.Plugin(ast.parse(s)).run()}
+    return set(starmap('{}:{}: {}'.format, flake8_scs.Plugin(ast.parse(s)).run()))
 
 
 # ==============================================================================

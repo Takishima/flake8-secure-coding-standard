@@ -21,9 +21,10 @@ import importlib.metadata
 import operator
 import platform
 import stat
-from typing import Any, AnyStr, ClassVar, Generator
+from typing import TYPE_CHECKING, Any, AnyStr, ClassVar, Generator
 
-import flake8.options.manager
+if TYPE_CHECKING:  # pragma: no cover
+    import flake8.options.manager
 
 ast_Constant = ast.Constant  # noqa: N816
 
@@ -42,27 +43,19 @@ _DEFAULT_MAX_MODE = 0o755
 SCS100 = 'SCS100 use of os.path.abspath() and os.path.relpath() should be avoided in favor of os.path.realpath()'
 SCS101 = 'SCS101 `eval()` and `exec()` represent a security risk and should be avoided'
 SCS102 = 'SCS102 use of `os.system()` should be avoided'
-SCS103 = ' '.join(
-    [
-        'SCS103 use of `shell=True` in subprocess functions or use of functions that internally set it should be',
-        'avoided',
-    ]
+SCS103 = (
+    'SCS103 use of `shell=True` in subprocess functions or use of functions that internally set it should be avoided'
 )
 SCS104 = 'SCS104 use of `tempfile.mktemp()` should be avoided, prefer `tempfile.mkstemp()`'
-SCS105 = ' '.join(
-    [
-        'SCS105 use of `yaml.load()` should be avoided, prefer `yaml.safe_load()` or',
-        '`yaml.load(xxx, Loader=SafeLoader)`',
-    ]
+SCS105 = (
+    'SCS105 use of `yaml.load()` should be avoided, prefer `yaml.safe_load()` or `yaml.load(xxx, Loader=SafeLoader)`'
 )
 SCS106 = 'SCS106 use of `jsonpickle.decode()` should be avoided'
 SCS107 = 'SCS107 debugging code should not be present in production code (e.g. `import pdb`)'
 SCS108 = 'SCS108 `assert` statements should not be present in production code'
-SCS109 = ' '.join(
-    [
-        'SCS109 Use of builtin `open` for writing is discouraged in favor of `os.open` to allow for setting file',
-        'permissions',
-    ]
+SCS109 = (
+    'SCS109 Use of builtin `open` for writing is discouraged in favor of `os.open` to allow '
+    'for setting file permissions'
 )
 SCS110 = 'SCS110 Use of `os.popen()` should be avoided, as it internally uses `subprocess.Popen` with `shell=True`'
 SCS111 = 'SCS111 Use of `shlex.quote()` should be avoided on non-POSIX platforms (such as Windows)'
@@ -80,7 +73,7 @@ SCS119 = 'SCS119 Avoid using `os.chmod` with unsafe file permissions (W ^ X for 
 # Helper functions
 
 
-def _read_octal_mode_option(name, value, default):
+def _read_octal_mode_option(name, value, default):  # noqa: C901
     """
     Read an integer or list of integer configuration option.
 
@@ -118,23 +111,27 @@ def _read_octal_mode_option(name, value, default):
         try:
             allowed_modes = [_str_to_int(mode) for mode in modes if mode]
         except ValueError as error:
-            raise ValueError(f'Unable to convert {modes} elements to integers!') from error
+            msg = f'Unable to convert {modes} elements to integers!'
+            raise ValueError(msg) from error
         else:
             if not allowed_modes:
-                raise ValueError(f'Calculated empty value for `{name}`!')
+                msg = f'Calculated empty value for `{name}`!'
+                raise ValueError(msg)
             return allowed_modes
     elif modes and modes[0]:
         # Single values (ie. max allowed value for mode)
         try:
             return _str_to_int(value)
         except ValueError as error:
-            if value in ('y', 'yes', 'true'):
+            if value in {'y', 'yes', 'true'}:
                 return default
-            if value in ('n', 'no', 'false'):
+            if value in {'n', 'no', 'false'}:
                 return None
-            raise ValueError(f'Invalid value for `{name}`: {value}!') from error
+            msg = f'Invalid value for `{name}`: {value}!'
+            raise ValueError(msg) from error
     else:
-        raise ValueError(f'Invalid value for `{name}`: {value}!')
+        msg = f'Invalid value for `{name}`: {value}!'
+        raise ValueError(msg)
 
 
 # ==============================================================================
@@ -144,7 +141,7 @@ def _is_posix():
     """Return True if the current system is POSIX-compatible."""
     # NB: we could simply use `os.name` instead of `platform.system()`. However, that solution would be difficult to
     #     test using `mock` as a few modules (like `pytest`) actually use it internally...
-    return platform.system() in ('Linux', 'Darwin')
+    return platform.system() in {'Linux', 'Darwin'}
 
 
 _is_unix = _is_posix
@@ -178,7 +175,7 @@ def _is_os_path_call(node: ast.Call) -> bool:
                 and node.func.value.value.id == 'os'
             )
         )
-        and node.func.attr in ('abspath', 'relpath')
+        and node.func.attr in {'abspath', 'relpath'}
     )
 
 
@@ -242,8 +239,8 @@ def _is_shell_true_call(node: ast.Call) -> bool:
         return False
 
     # subprocess module
-    if node.func.value.id in ('subprocess', 'sp'):
-        if node.func.attr in ('call', 'check_call', 'check_output', 'Popen', 'run'):
+    if node.func.value.id in {'subprocess', 'sp'}:
+        if node.func.attr in {'call', 'check_call', 'check_output', 'Popen', 'run'}:
             for keyword in node.keywords:
                 if keyword.arg == 'shell' and isinstance(keyword.value, ast_Constant) and bool(keyword.value.value):
                     return True
@@ -253,7 +250,7 @@ def _is_shell_true_call(node: ast.Call) -> bool:
                 and bool(node.args[_n_args_max].value)
             ):
                 return True
-        if node.func.attr in ('getoutput', 'getstatusoutput'):
+        if node.func.attr in {'getoutput', 'getstatusoutput'}:
             return True
 
     # asyncio module
@@ -295,7 +292,7 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
     _safe_loaders = ('BaseLoader', 'SafeLoader')
     _unsafe_loaders = ('Loader', 'UnsafeLoader', 'FullLoader')
     if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name) and node.func.value.id == 'yaml':
-        if node.func.attr in ('unsafe_load', 'full_load'):
+        if node.func.attr in {'unsafe_load', 'full_load'}:
             # Cover:
             #  * yaml.full_load().
             #  * yaml.unsafe_load().
@@ -316,7 +313,7 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
                         return False
 
             if (
-                len(node.args) < _n_args_max  # pylint: disable=too-many-boolean-expressions
+                len(node.args) < _n_args_max  # noqa: PLR0916
                 or (isinstance(node.args[1], ast.Name) and node.args[1].id in _unsafe_loaders)
                 or (
                     isinstance(node.args[1], ast.Attribute)
@@ -334,7 +331,7 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
                 #  * yaml.load(x, yaml.FullLoader).
                 return True
 
-    if isinstance(node.func, ast.Name) and node.func.id in ('unsafe_load', 'full_load'):
+    if isinstance(node.func, ast.Name) and node.func.id in {'unsafe_load', 'full_load'}:
         # Cover:
         #  * unsafe_load(...).
         #  * full_load(...).
@@ -403,7 +400,8 @@ def _chmod_get_mode(node):
     if isinstance(node, ast.BinOp):
         return _binop[type(node.op)](_chmod_get_mode(node.left), _chmod_get_mode(node.right))
 
-    raise ValueError(f'Do not know how to process node: {ast.dump(node)}')
+    msg = f'Do not know how to process node: {ast.dump(node)}'
+    raise ValueError(msg)
 
 
 def _chmod_has_wx_for_go(node):
@@ -425,7 +423,8 @@ def _chmod_has_wx_for_go(node):
     else:
         if modes is None:
             # NB: this would be from invalid code such as `os.chmod("file.txt")`
-            raise RuntimeError('Unable to extract `mode` argument from function call!')
+            msg = 'Unable to extract `mode` argument from function call!'
+            raise RuntimeError(msg)
         # pylint: disable=no-member
         return bool(modes & (stat.S_IWGRP | stat.S_IXGRP | stat.S_IWOTH | stat.S_IXOTH))
 
@@ -466,7 +465,7 @@ class Visitor(ast.NodeVisitor):
         self.errors: list[tuple[int, int, str]] = []
         self._from_imports: dict[str, str] = {}
 
-    def visit_Call(self, node: ast.Call) -> None:  # pylint: disable=too-many-branches # noqa: PLR0912
+    def visit_Call(self, node: ast.Call) -> None:  # noqa: C901, PLR0912
         """Visitor method called for ast.Call nodes."""
         if _is_pdb_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS107))
@@ -486,7 +485,7 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS103))
         elif _is_builtin_open_for_writing(node):
             self.errors.append((node.lineno, node.col_offset, SCS109))
-        elif isinstance(node.func, ast.Name) and (node.func.id in ('eval', 'exec')):
+        elif isinstance(node.func, ast.Name) and (node.func.id in {'eval', 'exec'}):
             self.errors.append((node.lineno, node.col_offset, SCS101))
         elif not _is_posix() and _is_function_call(node, module='shlex', function='quote'):
             self.errors.append((node.lineno, node.col_offset, SCS111))
@@ -537,7 +536,7 @@ class Visitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: C901
         """Visitor method called for ast.ImportFrom nodes."""
         for alias in node.names:
             if (node.module is None and alias.name == 'pdb') or node.module == 'pdb':
@@ -548,12 +547,12 @@ class Visitor(ast.NodeVisitor):
                 # Cover:
                 #  * from tempfile import mktemp.
                 self.errors.append((node.lineno, node.col_offset, SCS104))
-            elif node.module in ('os.path', 'op') and alias.name in ('relpath', 'abspath'):
+            elif node.module in {'os.path', 'op'} and alias.name in {'relpath', 'abspath'}:
                 # Cover:
                 #  * from os.path import relpath, abspath.
                 #  * import os.path as op; from op import relpath, abspath.
                 self.errors.append((node.lineno, node.col_offset, SCS100))
-            elif (node.module == 'subprocess' and alias.name in ('getoutput', 'getstatusoutput')) or (
+            elif (node.module == 'subprocess' and alias.name in {'getoutput', 'getstatusoutput'}) or (
                 node.module == 'asyncio' and alias.name == 'create_subprocess_shell'
             ):
                 # Cover:
@@ -574,12 +573,12 @@ class Visitor(ast.NodeVisitor):
                 # * from shlex import quote.
                 # * from shlex import quote as quoted.
                 self.errors.append((node.lineno, node.col_offset, SCS111))
-            elif node.module == 'pickle' and alias.name in ('load', 'loads'):
+            elif node.module == 'pickle' and alias.name in {'load', 'loads'}:
                 # Cover:
                 # * from pickle import load.
                 # * from pickle import loads as load.
                 self.errors.append((node.lineno, node.col_offset, SCS113))
-            elif node.module == 'marshal' and alias.name in ('load', 'loads'):
+            elif node.module == 'marshal' and alias.name in {'load', 'loads'}:
                 # Cover:
                 # * from marshal import load.
                 # * from marshal import loads as load.

@@ -13,14 +13,15 @@
 # limitations under the License.
 
 import ast
-
-import pytest
+from itertools import starmap
 
 import flake8_secure_coding_standard as flake8_scs
 
+import pytest
+
 
 def results(s):
-    return {'{}:{}: {}'.format(*r) for r in flake8_scs.Plugin(ast.parse(s)).run()}
+    return set(starmap('{}:{}: {}'.format, flake8_scs.Plugin(ast.parse(s)).run()))
 
 
 @pytest.mark.parametrize('s', ['', 'int(0)'])

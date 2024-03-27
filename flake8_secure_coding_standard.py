@@ -328,7 +328,7 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
     # Cover:
     #  * unsafe_load(...).
     #  * full_load(...).
-    return isinstance(node.func, ast.Name) and node.func.id in {'unsafe_load', 'full_load'}:
+    return isinstance(node.func, ast.Name) and node.func.id in {'unsafe_load', 'full_load'}
 
 
 # ==============================================================================

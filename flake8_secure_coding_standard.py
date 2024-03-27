@@ -254,12 +254,9 @@ def _is_shell_true_call(node: ast.Call) -> bool:
             return True
 
     # asyncio module
-    if (node.func.value.id == 'asyncio' and node.func.attr == 'create_subprocess_shell') or (
+    return (node.func.value.id == 'asyncio' and node.func.attr == 'create_subprocess_shell') or (
         node.func.value.id == 'loop' and node.func.attr == 'subprocess_shell'
-    ):
-        return True
-
-    return False
+    )
 
 
 def _is_pdb_call(node: ast.Call) -> bool:
@@ -267,11 +264,10 @@ def _is_pdb_call(node: ast.Call) -> bool:
         # Cover:
         #  * pdb.func().
         return True
-    if isinstance(node.func, ast.Name) and node.func.id == 'Pdb':
-        # Cover:
-        # * Pdb().
-        return True
-    return False
+
+    # Cover:
+    # * Pdb().
+    return isinstance(node.func, ast.Name) and node.func.id == 'Pdb'
 
 
 def _is_mktemp_call(node: ast.Call) -> bool:
@@ -280,11 +276,10 @@ def _is_mktemp_call(node: ast.Call) -> bool:
         #  * tempfile.mktemp().
         #  * xxxx.mktemp().
         return True
-    if isinstance(node.func, ast.Name) and node.func.id == 'mktemp':
-        # Cover:
-        #  * mktemp().
-        return True
-    return False
+
+    # Cover:
+    #  * mktemp().
+    return isinstance(node.func, ast.Name) and node.func.id == 'mktemp'
 
 
 def _is_yaml_unsafe_call(node: ast.Call) -> bool:
@@ -330,13 +325,10 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
                 #  * yaml.load(x, yaml.UnsafeLoader).
                 #  * yaml.load(x, yaml.FullLoader).
                 return True
-
-    if isinstance(node.func, ast.Name) and node.func.id in {'unsafe_load', 'full_load'}:
-        # Cover:
-        #  * unsafe_load(...).
-        #  * full_load(...).
-        return True
-    return False
+    # Cover:
+    #  * unsafe_load(...).
+    #  * full_load(...).
+    return isinstance(node.func, ast.Name) and node.func.id in {'unsafe_load', 'full_load'}
 
 
 # ==============================================================================

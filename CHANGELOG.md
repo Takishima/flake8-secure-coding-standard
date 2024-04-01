@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Repository
 
 - Update `adrienverge/yamllint.git` hook to v1.35.1
-- Update `astral-sh/ruff-pre-commit` hook to v0.3.4
+- Update `astral-sh/ruff-pre-commit` hook to v0.3.5
 - Update `Lucas-C/pre-commit-hooks` hook to v1.5.5
 
 ## [v1.4.1] - 2024-01-07

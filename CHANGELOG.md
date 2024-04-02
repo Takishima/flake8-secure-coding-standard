@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Repository
 
+- Update `action/setup-python` GitHub Action to v5
+- Update `action/checkout` GitHub Action to v4
 - Update `adrienverge/yamllint.git` hook to v1.35.1
 - Update `astral-sh/ruff-pre-commit` hook to v0.3.5
 - Update `Lucas-C/pre-commit-hooks` hook to v1.5.5

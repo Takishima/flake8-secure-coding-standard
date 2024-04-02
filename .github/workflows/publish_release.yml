@@ -99,7 +99,7 @@ jobs:
             dist/*
 
       - name: Setup Python for Pypi upload
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
 
       - name: Publish standard package
         uses: pypa/gh-action-pypi-publish@release/v1

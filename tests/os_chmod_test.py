@@ -119,7 +119,7 @@ def test_chmod_get_mode_binop(s, expected):
         'S_IREAD | S_IWRITE',
         'S_IRUSR | S_IWUSR | S_IXUSR',
     ],
-    ids=lambda s: s if s else '<empty>',
+    ids=lambda s: s or '<empty>',
 )
 def test_chmod(mocker, platform, enabled_platform, fname, arg_type, forbidden, s):  # noqa: PLR0917
     mocker.patch('platform.system', return_value=platform)

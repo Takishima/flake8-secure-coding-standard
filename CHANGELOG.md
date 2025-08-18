@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `action/setup-python` GitHub Action to v5
 - Update `action/checkout` GitHub Action to v4
 - Update GitHub Action `thomaseizinger/create-pull-request` to v1.4.0
+- Update GitHub Action `stefanzweifel/git-auto-commit-action` to v6
 - Update `adrienverge/yamllint.git` hook to v1.35.1
 - Update `astral-sh/ruff-pre-commit` hook to v0.4.7
 - Update `codespell-project/codespell` hook to v2.3.0

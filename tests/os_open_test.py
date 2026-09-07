@@ -36,9 +36,9 @@ def configure_plugin(arg):
     )
     flake8_scs.Plugin.parse_options(
         OptionValue(
-            False,  # noqa: FBT003
-            False,  # noqa: FBT003
-            False,  # noqa: FBT003
+            False,  # ruff: ignore[boolean-positional-value-in-call]
+            False,  # ruff: ignore[boolean-positional-value-in-call]
+            False,  # ruff: ignore[boolean-positional-value-in-call]
             mode,
         )
     )

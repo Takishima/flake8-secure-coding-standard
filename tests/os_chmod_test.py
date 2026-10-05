@@ -121,7 +121,7 @@ def test_chmod_get_mode_binop(s, expected):
     ],
     ids=lambda s: s or '<empty>',
 )
-def test_chmod(mocker, platform, enabled_platform, fname, arg_type, forbidden, s):  # noqa: PLR0917
+def test_chmod(mocker, platform, enabled_platform, fname, arg_type, forbidden, s):  # ruff: ignore[too-many-positional-arguments]
     mocker.patch('platform.system', return_value=platform)
 
     if s:

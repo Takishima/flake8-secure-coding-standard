@@ -132,7 +132,7 @@ def test_os_function_ok(mocker, platform, function, option, s):
 @pytest.mark.parametrize(
     ('function', 's'), [(function, s) for function, tests in _os_function_strings.items() for s in tests]
 )
-def test_os_function_call(mocker, platform, enabled_platform, function, option, s):  # noqa: PLR0917
+def test_os_function_call(mocker, platform, enabled_platform, function, option, s):  # ruff: ignore[too-many-positional-arguments]
     _msg_map = {'mkdir': flake8_scs.SCS116, 'mkfifo': flake8_scs.SCS117, 'mknod': flake8_scs.SCS118}
 
     configure_plugin(function, option)

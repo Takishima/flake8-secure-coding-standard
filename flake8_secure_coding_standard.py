@@ -26,13 +26,13 @@ from typing import TYPE_CHECKING, Any, AnyStr, ClassVar, Generator
 if TYPE_CHECKING:  # pragma: no cover
     import flake8.options.manager
 
-ast_Constant = ast.Constant  # noqa: N816
+ast_Constant = ast.Constant  # ruff: ignore[mixed-case-variable-in-global-scope]
 
 _use_optparse = tuple(int(s) for s in importlib.metadata.version('flake8').split('.')) < (3, 8, 0)
 
 
 if _use_optparse:  # pragma: no cover
-    import optparse  # noqa: F401 pylint: disable=deprecated-module, unused-import
+    import optparse  # ruff: ignore[unused-import] pylint: disable=deprecated-module, unused-import
 else:
     import argparse
 
@@ -73,7 +73,7 @@ SCS119 = 'SCS119 Avoid using `os.chmod` with unsafe file permissions (W ^ X for 
 # Helper functions
 
 
-def _read_octal_mode_option(name, value, default):  # noqa: C901
+def _read_octal_mode_option(name, value, default):  # ruff: ignore[complex-structure]
     """
     Read an integer or list of integer configuration option.
 
@@ -308,7 +308,7 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
                         return False
 
             if (
-                len(node.args) < _n_args_max  # noqa: PLR0916
+                len(node.args) < _n_args_max  # ruff: ignore[too-many-boolean-expressions]
                 or (isinstance(node.args[1], ast.Name) and node.args[1].id in _unsafe_loaders)
                 or (
                     isinstance(node.args[1], ast.Attribute)
@@ -457,7 +457,7 @@ class Visitor(ast.NodeVisitor):
         self.errors: list[tuple[int, int, str]] = []
         self._from_imports: dict[str, str] = {}
 
-    def visit_Call(self, node: ast.Call) -> None:  # noqa: C901, PLR0912
+    def visit_Call(self, node: ast.Call) -> None:  # ruff: ignore[complex-structure, too-many-branches]
         """Visitor method called for ast.Call nodes."""
         if _is_pdb_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS107))
@@ -528,7 +528,7 @@ class Visitor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: C901
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # ruff: ignore[complex-structure]
         """Visitor method called for ast.ImportFrom nodes."""
         for alias in node.names:
             if (node.module is None and alias.name == 'pdb') or node.module == 'pdb':
@@ -684,7 +684,7 @@ class Plugin:  # pylint: disable=R0903
         class OctalModeAction(argparse.Action):
             """Action class for octal mode options."""
 
-            def __call__(self, parser, namespace, values, option_string=None):  # noqa: ARG002
+            def __call__(self, parser, namespace, values, option_string=None):  # ruff: ignore[unused-method-argument]
                 setattr(namespace, self.dest, _read_octal_mode_option(self.dest, values, _DEFAULT_MAX_MODE))
 
         action = {'action': OctalModeAction}

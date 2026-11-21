@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upload coverage data using the `coverallsapp/github-action` GitHub Action
 - Group Dependabot updates into a single pull request and do not require a CHANGELOG entry for them
 - Pass GitHub event data to workflow scripts through environment variables
+- Fix the CHANGELOG parsing check on release pull requests (strip the leading `v` from the version)
 - Update `adrienverge/yamllint.git` hook to v1.38.0
 - Update `astral-sh/ruff-pre-commit` hook to v0.17.5
 - Update `codespell-project/codespell` hook to v2.4.3

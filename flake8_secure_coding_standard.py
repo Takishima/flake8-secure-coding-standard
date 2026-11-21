@@ -187,8 +187,6 @@ def _is_builtin_open_for_writing(node: ast.Call) -> bool:
                 return True  # variable -> to be on the safe side, flag as inappropriate
             if isinstance(node.args[1], ast_Constant):
                 mode = node.args[1].value
-            if isinstance(node.args[1], ast.Str):
-                mode = node.args[1].s
         else:
             for keyword in node.keywords:
                 if keyword.arg == 'mode':
@@ -219,8 +217,6 @@ def _get_mode_arg(node, args_idx):
     if node_intern:
         if isinstance(node_intern, ast_Constant):
             mode = node_intern.value
-        elif isinstance(node_intern, ast.Num):  # pragma: no cover
-            mode = node_intern.n
     return mode
 
 

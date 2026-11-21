@@ -7,19 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Drop support for Python 3.8 and 3.9 (both end-of-life); Python 3.10 is now the minimum version
+
+### Fixed
+
+- Support for Python 3.14 (removed usage of `ast.Str` and `ast.Num`)
+
 ### Repository
 
-- Update `action/setup-python` GitHub Action to v5
-- Update `action/checkout` GitHub Action to v4
+- Update `action/setup-python` GitHub Action to v7
+- Update `action/checkout` GitHub Action to v7
 - Update GitHub Action `thomaseizinger/create-pull-request` to v1.4.0
-- Update GitHub Action `stefanzweifel/git-auto-commit-action` to v6
+- Update GitHub Action `stefanzweifel/git-auto-commit-action` to v7
+- Update GitHub Action `EndBug/add-and-commit` to v11
+- Update GitHub Action `github/codeql-action` to v4
+- Run CI for Python 3.10 to 3.14 on all platforms (Python 3.8 and 3.9 are not available on `ubuntu-latest` anymore)
+- Upload coverage data using the `coverallsapp/github-action` GitHub Action
+- Group Dependabot updates into a single pull request and do not require a CHANGELOG entry for them
+- Pass GitHub event data to workflow scripts through environment variables
 - Update `adrienverge/yamllint.git` hook to v1.35.1
 - Update `astral-sh/ruff-pre-commit` hook to v0.4.7
 - Update `codespell-project/codespell` hook to v2.3.0
 - Update `Lucas-C/pre-commit-hooks` hook to v1.5.5
 - Update `pre-commit/pre-commit-hooks` hook to v4.6.0
-- Disable macOS CI for Python < 3.11 (now runs on M1 macs on GitHub)
-- Enable Python 3.12 in CI
 
 ## [v1.4.1] - 2024-01-07
 

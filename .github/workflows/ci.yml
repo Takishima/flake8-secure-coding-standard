@@ -24,7 +24,7 @@ jobs:
       matrix:
         runs-on: [ubuntu-latest, windows-latest, macos-latest]
         # NB: always quote the versions, otherwise YAML turns 3.10 into 3.1
-        python: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        python: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
 
     name: "🐍 ${{ matrix.python }} • ${{ matrix.runs-on }}"
     runs-on: ${{ matrix.runs-on }}

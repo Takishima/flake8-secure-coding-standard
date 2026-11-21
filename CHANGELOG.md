@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update GitHub Action `stefanzweifel/git-auto-commit-action` to v7
 - Update GitHub Action `EndBug/add-and-commit` to v11
 - Update GitHub Action `github/codeql-action` to v4
-- Run CI for Python 3.10 to 3.14 on all platforms (Python 3.8 and 3.9 are not available on `ubuntu-latest` anymore)
+- Run CI for Python 3.10 to 3.15 on all platforms (Python 3.8 and 3.9 are not available on `ubuntu-latest` anymore)
 - Upload coverage data using the `coverallsapp/github-action` GitHub Action
 - Group Dependabot updates into a single pull request and do not require a CHANGELOG entry for them
 - Pass GitHub event data to workflow scripts through environment variables

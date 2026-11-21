@@ -21,9 +21,11 @@ import importlib.metadata
 import operator
 import platform
 import stat
-from typing import TYPE_CHECKING, Any, AnyStr, ClassVar, Generator
+from typing import TYPE_CHECKING, Any, AnyStr, ClassVar
 
 if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Generator
+
     import flake8.options.manager
 
 ast_Constant = ast.Constant  # ruff: ignore[mixed-case-variable-in-global-scope]
@@ -229,7 +231,7 @@ def _is_allowed_mode(node, allowed_modes, args_idx):
 
 
 def _is_shell_true_call(node: ast.Call) -> bool:
-    _n_args_max = 8
+    n_args_max = 8
     if not (isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name)):
         return False
 
@@ -240,9 +242,9 @@ def _is_shell_true_call(node: ast.Call) -> bool:
                 if keyword.arg == 'shell' and isinstance(keyword.value, ast_Constant) and bool(keyword.value.value):
                     return True
             if (
-                len(node.args) > _n_args_max
-                and isinstance(node.args[_n_args_max], ast_Constant)
-                and bool(node.args[_n_args_max].value)
+                len(node.args) > n_args_max
+                and isinstance(node.args[n_args_max], ast_Constant)
+                and bool(node.args[n_args_max].value)
             ):
                 return True
         if node.func.attr in {'getoutput', 'getstatusoutput'}:
@@ -278,9 +280,9 @@ def _is_mktemp_call(node: ast.Call) -> bool:
 
 
 def _is_yaml_unsafe_call(node: ast.Call) -> bool:
-    _n_args_max = 2
-    _safe_loaders = ('BaseLoader', 'SafeLoader')
-    _unsafe_loaders = ('Loader', 'UnsafeLoader', 'FullLoader')
+    n_args_max = 2
+    safe_loaders = ('BaseLoader', 'SafeLoader')
+    unsafe_loaders = ('Loader', 'UnsafeLoader', 'FullLoader')
     if isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name) and node.func.value.id == 'yaml':
         if node.func.attr in {'unsafe_load', 'full_load'}:
             # Cover:
@@ -290,25 +292,25 @@ def _is_yaml_unsafe_call(node: ast.Call) -> bool:
         if node.func.attr == 'load':
             for keyword in node.keywords:
                 if keyword.arg == 'Loader' and isinstance(keyword.value, ast.Name):
-                    if keyword.value.id in _unsafe_loaders:
+                    if keyword.value.id in unsafe_loaders:
                         # Cover:
                         #  * yaml.load(x, Loader=Loader).
                         #  * yaml.load(x, Loader=UnsafeLoader).
                         #  * yaml.load(x, Loader=FullLoader).
                         return True
-                    if keyword.value.id in _safe_loaders:
+                    if keyword.value.id in safe_loaders:
                         # Cover:
                         #  * yaml.load(x, Loader=BaseLoader).
                         #  * yaml.load(x, Loader=SafeLoader).
                         return False
 
             if (
-                len(node.args) < _n_args_max  # ruff: ignore[too-many-boolean-expressions]
-                or (isinstance(node.args[1], ast.Name) and node.args[1].id in _unsafe_loaders)
+                len(node.args) < n_args_max  # ruff: ignore[too-many-boolean-expressions]
+                or (isinstance(node.args[1], ast.Name) and node.args[1].id in unsafe_loaders)
                 or (
                     isinstance(node.args[1], ast.Attribute)
                     and node.args[1].value.id == 'yaml'
-                    and node.args[1].attr in _unsafe_loaders
+                    and node.args[1].attr in unsafe_loaders
                 )
             ):
                 # Cover:
@@ -396,24 +398,23 @@ def _chmod_has_wx_for_go(node):
         # On Windows, only stat.S_IREAD and stat.S_IWRITE can be used, all other bits are ignored
         return False
 
+    if len(node.args) > 1:
+        mode_node = node.args[1]
+    else:
+        mode_node = next((keyword.value for keyword in node.keywords if keyword.arg == 'mode'), None)
+
+    if mode_node is None:
+        # NB: this would be from invalid code such as `os.chmod("file.txt")`
+        msg = 'Unable to extract `mode` argument from function call!'
+        raise RuntimeError(msg)
+
     try:
-        modes = None
-        if len(node.args) > 1:
-            modes = _chmod_get_mode(node.args[1])
-        elif node.keywords:
-            for keyword in node.keywords:
-                if keyword.arg == 'mode':
-                    modes = _chmod_get_mode(keyword.value)
-                    break
+        modes = _chmod_get_mode(mode_node)
     except ValueError:
         return False
-    else:
-        if modes is None:
-            # NB: this would be from invalid code such as `os.chmod("file.txt")`
-            msg = 'Unable to extract `mode` argument from function call!'
-            raise RuntimeError(msg)
-        # pylint: disable=no-member
-        return bool(modes & (stat.S_IWGRP | stat.S_IXGRP | stat.S_IWOTH | stat.S_IXOTH))
+
+    # pylint: disable=no-member
+    return bool(modes & (stat.S_IWGRP | stat.S_IXGRP | stat.S_IWOTH | stat.S_IXOTH))
 
 
 # ==============================================================================

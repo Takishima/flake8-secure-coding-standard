@@ -214,9 +214,8 @@ def _get_mode_arg(node, args_idx):
             if keyword.arg == 'mode':
                 node_intern = keyword.value
                 break
-    if node_intern:
-        if isinstance(node_intern, ast_Constant):
-            mode = node_intern.value
+    if node_intern and isinstance(node_intern, ast_Constant):
+        mode = node_intern.value
     return mode
 
 

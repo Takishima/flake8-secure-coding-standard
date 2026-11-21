@@ -27,11 +27,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upload coverage data using the `coverallsapp/github-action` GitHub Action
 - Group Dependabot updates into a single pull request and do not require a CHANGELOG entry for them
 - Pass GitHub event data to workflow scripts through environment variables
-- Update `adrienverge/yamllint.git` hook to v1.35.1
-- Update `astral-sh/ruff-pre-commit` hook to v0.4.7
-- Update `codespell-project/codespell` hook to v2.3.0
-- Update `Lucas-C/pre-commit-hooks` hook to v1.5.5
-- Update `pre-commit/pre-commit-hooks` hook to v4.6.0
+- Update `adrienverge/yamllint.git` hook to v1.38.0
+- Update `astral-sh/ruff-pre-commit` hook to v0.17.5
+- Update `codespell-project/codespell` hook to v2.4.3
+- Update `Lucas-C/pre-commit-hooks` hook to v1.5.6
+- Update `pre-commit/pre-commit-hooks` hook to v6.0.0
+- Remove the `doc8` and `blacken-docs` hooks (no reStructuredText files or Python code blocks to check)
+- Rename the `ruff` hook to `ruff-check` and run it before `ruff-format`
+- Move the ruff linter settings to the `lint` section, target Python 3.10 and drop removed rules
 
 ## [v1.4.1] - 2024-01-07
 

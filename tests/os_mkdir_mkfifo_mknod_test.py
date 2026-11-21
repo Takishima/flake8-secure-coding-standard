@@ -132,14 +132,14 @@ def test_os_function_ok(mocker, platform, function, option, s):
 @pytest.mark.parametrize(
     ('function', 's'), [(function, s) for function, tests in _os_function_strings.items() for s in tests]
 )
-def test_os_function_call(mocker, platform, enabled_platform, function, option, s):  # noqa: PLR0917
-    _msg_map = {'mkdir': flake8_scs.SCS116, 'mkfifo': flake8_scs.SCS117, 'mknod': flake8_scs.SCS118}
+def test_os_function_call(mocker, platform, enabled_platform, function, option, s):  # ruff: ignore[too-many-positional-arguments]
+    msg_map = {'mkdir': flake8_scs.SCS116, 'mkfifo': flake8_scs.SCS117, 'mknod': flake8_scs.SCS118}
 
     configure_plugin(function, option)
     mocker.patch('platform.system', return_value=platform)
 
     flake8_warnings = results(s)
     if enabled_platform and option == 'True':
-        assert flake8_warnings == {'1:0: ' + flake8_scs.Visitor.format_mode_msg(_msg_map[function])}
+        assert flake8_warnings == {'1:0: ' + flake8_scs.Visitor.format_mode_msg(msg_map[function])}
     else:
         assert flake8_warnings == set()

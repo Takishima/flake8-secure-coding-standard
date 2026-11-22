@@ -230,23 +230,49 @@ def _is_allowed_mode(node, allowed_modes, args_idx):
     return True
 
 
-def _is_shell_true_call(node: ast.Call) -> bool:
+_SUBPROCESS_MODULE_NAMES = ('subprocess', 'sp')
+_SUBPROCESS_SHELL_KWARG_FUNCTIONS = ('call', 'check_call', 'check_output', 'Popen', 'run')
+
+
+def _has_shell_true_arg(node: ast.Call) -> bool:
     n_args_max = 8
+    for keyword in node.keywords:
+        if keyword.arg == 'shell' and isinstance(keyword.value, ast_Constant) and bool(keyword.value.value):
+            return True
+    return (
+        len(node.args) > n_args_max
+        and isinstance(node.args[n_args_max], ast_Constant)
+        and bool(node.args[n_args_max].value)
+    )
+
+
+def _is_shell_true_call(
+    node: ast.Call,
+    subprocess_modules: tuple[str, ...] | set[str] = _SUBPROCESS_MODULE_NAMES,
+    subprocess_functions: tuple[str, ...] | set[str] = (),
+) -> bool:
+    """
+    Check whether a function call runs a command through a shell.
+
+    Args:
+        node: an AST node
+        subprocess_modules: Names that refer to the `subprocess` module
+        subprocess_functions: Names that refer to one of the `subprocess` functions accepting a `shell` argument (e.g.
+            after `from subprocess import call`)
+    """
+    if isinstance(node.func, ast.Name):
+        # Cover:
+        #  * from subprocess import call; call(..., shell=True).
+        #  * from subprocess import run as sp_run; sp_run(..., shell=True).
+        return node.func.id in subprocess_functions and _has_shell_true_arg(node)
+
     if not (isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name)):
         return False
 
     # subprocess module
-    if node.func.value.id in {'subprocess', 'sp'}:
-        if node.func.attr in {'call', 'check_call', 'check_output', 'Popen', 'run'}:
-            for keyword in node.keywords:
-                if keyword.arg == 'shell' and isinstance(keyword.value, ast_Constant) and bool(keyword.value.value):
-                    return True
-            if (
-                len(node.args) > n_args_max
-                and isinstance(node.args[n_args_max], ast_Constant)
-                and bool(node.args[n_args_max].value)
-            ):
-                return True
+    if node.func.value.id in subprocess_modules:
+        if node.func.attr in _SUBPROCESS_SHELL_KWARG_FUNCTIONS and _has_shell_true_arg(node):
+            return True
         if node.func.attr in {'getoutput', 'getstatusoutput'}:
             return True
 
@@ -451,7 +477,16 @@ class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         """Initialize a Visitor object."""
         self.errors: list[tuple[int, int, str]] = []
-        self._from_imports: dict[str, str] = {}
+        # Names referring to the `subprocess` module (e.g. `import subprocess as xxx`)
+        self._subprocess_modules: set[str] = set(_SUBPROCESS_MODULE_NAMES)
+        # Names referring to `subprocess` functions with a `shell` argument (e.g. `from subprocess import call`)
+        self._subprocess_functions: set[str] = set()
+
+    def _unbind_name(self, name: str) -> None:
+        """Forget about a name that is being rebound to something we know nothing about."""
+        self._subprocess_functions.discard(name)
+        if name not in _SUBPROCESS_MODULE_NAMES:
+            self._subprocess_modules.discard(name)
 
     def visit_Call(self, node: ast.Call) -> None:  # ruff: ignore[complex-structure, too-many-branches]
         """Visitor method called for ast.Call nodes."""
@@ -469,7 +504,7 @@ class Visitor(ast.NodeVisitor):
             self.errors.append((node.lineno, node.col_offset, SCS100))
         elif _is_function_call(node, module='os', function='popen'):
             self.errors.append((node.lineno, node.col_offset, SCS110))
-        elif _is_shell_true_call(node):
+        elif _is_shell_true_call(node, self._subprocess_modules, self._subprocess_functions):
             self.errors.append((node.lineno, node.col_offset, SCS103))
         elif _is_builtin_open_for_writing(node):
             self.errors.append((node.lineno, node.col_offset, SCS109))
@@ -522,11 +557,29 @@ class Visitor(ast.NodeVisitor):
                 #  * import pdb as xxx.
                 self.errors.append((node.lineno, node.col_offset, SCS107))
 
+            bound_name = alias.asname or alias.name.split('.')[0]
+            if alias.name == 'subprocess':
+                # Cover:
+                #  * import subprocess as xxx.
+                self._subprocess_modules.add(bound_name)
+            else:
+                self._unbind_name(bound_name)
+
         self.generic_visit(node)
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # ruff: ignore[complex-structure]
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # ruff: ignore[complex-structure, too-many-branches]
         """Visitor method called for ast.ImportFrom nodes."""
         for alias in node.names:
+            bound_name = alias.asname or alias.name
+            if node.level == 0 and node.module == 'subprocess' and alias.name in _SUBPROCESS_SHELL_KWARG_FUNCTIONS:
+                # Cover:
+                #  * from subprocess import call.
+                #  * from subprocess import call as xxx.
+                # NB: no error here, only calls with `shell=True` are reported (see visit_Call)
+                self._subprocess_functions.add(bound_name)
+            else:
+                self._unbind_name(bound_name)
+
             if (node.module is None and alias.name == 'pdb') or node.module == 'pdb':
                 # Cover:
                 #  * from pdb import xxx.
@@ -589,6 +642,26 @@ class Visitor(ast.NodeVisitor):
                     self.errors.append((node.lineno, node.col_offset, self._format_mode_msg(SCS112)))
                 elif _is_function_call(item.context_expr, module='shelve', function='open'):
                     self.errors.append((node.lineno, node.col_offset, SCS115))
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        """Visitor method called for ast.Assign nodes."""
+        self.generic_visit(node)
+        for target in node.targets:
+            for child in ast.walk(target):
+                if isinstance(child, ast.Name):
+                    # Cover:
+                    #  * from subprocess import call; call = my_call.
+                    self._unbind_name(child.id)
+
+    def visit_FunctionDef(self, node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef) -> None:
+        """Visitor method called for ast.FunctionDef, ast.AsyncFunctionDef and ast.ClassDef nodes."""
+        # Cover:
+        #  * from subprocess import call; def call(...): ...
+        self._unbind_name(node.name)
+        self.generic_visit(node)
+
+    visit_AsyncFunctionDef = visit_FunctionDef  # ruff: ignore[mixed-case-variable-in-class-scope]
+    visit_ClassDef = visit_FunctionDef  # ruff: ignore[mixed-case-variable-in-class-scope]
 
     def visit_Assert(self, node: ast.Assert) -> None:
         """Visitor method called for ast.Assert nodes."""

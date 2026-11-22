@@ -43,6 +43,23 @@ def results(s):
         'sp.check_call(["cat", "/etc/passwd"], shell=False)',
         'subprocess.check_output(["cat", "/etc/passwd"], shell=False)',
         'sp.check_output(["cat", "/etc/passwd"], shell=False)',
+        'from subprocess import call',
+        'from subprocess import call\ncall(["cat", "/etc/passwd"])',
+        'from subprocess import call\ncall(["cat", "/etc/passwd"], shell=False)',
+        'from subprocess import Popen\nPopen(["cat", "/etc/passwd"], b, e, i, o, e, pre, c, False)',
+        'import subprocess as subp\nsubp.run(["cat", "/etc/passwd"], shell=False)',
+        # Not the functions from the subprocess module
+        'call("cat /etc/passwd", shell=True)',
+        'from mymodule import call\ncall("cat /etc/passwd", shell=True)',
+        'from .subprocess import call\ncall("cat /etc/passwd", shell=True)',
+        'from subprocess import call\nfrom mymodule import call\ncall("cat /etc/passwd", shell=True)',
+        'from subprocess import call\ncall = my_call\ncall("cat /etc/passwd", shell=True)',
+        'from subprocess import call\ncall, other = my_call, 1\ncall("cat /etc/passwd", shell=True)',
+        'from subprocess import call\ndef call(cmd, shell): pass\ncall("cat /etc/passwd", shell=True)',
+        'from subprocess import call\nasync def call(cmd, shell): pass\ncall("cat /etc/passwd", shell=True)',
+        'from subprocess import Popen\nclass Popen: pass\nPopen("cat /etc/passwd", shell=True)',
+        'import subprocess as subp\nsubp = other\nsubp.run("cat /etc/passwd", shell=True)',
+        'import subprocess as subp\nimport other as subp\nsubp.run("cat /etc/passwd", shell=True)',
     ],
 )
 def test_shell_exec_ok(s):
@@ -94,3 +111,24 @@ def test_shell_exec_ok(s):
 )
 def test_shell_exec_not_ok(s, msg_id):
     assert results(s) == {'1:0: ' + getattr(flake8_scs, msg_id)}
+
+
+@pytest.mark.parametrize(
+    's',
+    [
+        'from subprocess import call\ncall("cat /etc/passwd", shell=True)',
+        'from subprocess import call as sp_call\nsp_call("cat /etc/passwd", shell=True)',
+        'from subprocess import check_call\ncheck_call("cat /etc/passwd", shell=True)',
+        'from subprocess import check_output\ncheck_output("cat /etc/passwd", shell=True)',
+        'from subprocess import run\nrun("cat /etc/passwd", shell=True)',
+        'from subprocess import Popen\nPopen("cat /etc/passwd", shell=True)',
+        'from subprocess import Popen\nPopen("cat /etc/passwd", b, e, i, o, e, pre, c, True)',
+        'from subprocess import PIPE, run\nrun("cat /etc/passwd", shell=True, stdout=PIPE)',
+        'import subprocess as subp\nsubp.run("cat /etc/passwd", shell=True)',
+        'import subprocess as subp\nsubp.getoutput("cat /etc/passwd")',
+        'import subprocess\nsubprocess = other\nsubprocess.run("cat /etc/passwd", shell=True)',
+        'call = my_call\nfrom subprocess import call\ncall("cat /etc/passwd", shell=True)',
+    ],
+)
+def test_shell_exec_imported_names_not_ok(s):
+    assert results(s) == {f'{len(s.splitlines())}:0: {flake8_scs.SCS103}'}

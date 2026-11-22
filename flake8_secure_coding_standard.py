@@ -477,6 +477,8 @@ class Visitor(ast.NodeVisitor):
     def __init__(self) -> None:
         """Initialize a Visitor object."""
         self.errors: list[tuple[int, int, str]] = []
+        # Function calls already reported by another visitor method
+        self._reported_calls: set[ast.Call] = set()
         # Names referring to the `subprocess` module (e.g. `import subprocess as xxx`)
         self._subprocess_modules: set[str] = set(_SUBPROCESS_MODULE_NAMES)
         # Names referring to `subprocess` functions with a `shell` argument (e.g. `from subprocess import call`)
@@ -490,7 +492,9 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.Call) -> None:  # ruff: ignore[complex-structure, too-many-branches]
         """Visitor method called for ast.Call nodes."""
-        if _is_pdb_call(node):
+        if node in self._reported_calls:
+            pass
+        elif _is_pdb_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS107))
         elif _is_mktemp_call(node):
             self.errors.append((node.lineno, node.col_offset, SCS104))
@@ -630,18 +634,27 @@ class Visitor(ast.NodeVisitor):
                 self.errors.append((node.lineno, node.col_offset, SCS115))
         self.generic_visit(node)
 
-    def visit_With(self, node: ast.With) -> None:
-        """Visitor method called for ast.With nodes."""
+    def visit_With(self, node: ast.With | ast.AsyncWith) -> None:
+        """Visitor method called for ast.With and ast.AsyncWith nodes."""
         for item in node.items:
             if isinstance(item.context_expr, ast.Call):
+                # NB: these are reported at the location of the `with` statement, make sure that visit_Call() does not
+                #     report them a second time
                 if _is_builtin_open_for_writing(item.context_expr):
                     self.errors.append((node.lineno, node.col_offset, SCS109))
+                    self._reported_calls.add(item.context_expr)
                 elif _is_function_call(item.context_expr, module='os', function='open') and not _is_allowed_mode(
                     item.context_expr, self.os_open_modes_allowed, args_idx=2
                 ):
                     self.errors.append((node.lineno, node.col_offset, self._format_mode_msg(SCS112)))
+                    self._reported_calls.add(item.context_expr)
                 elif _is_function_call(item.context_expr, module='shelve', function='open'):
                     self.errors.append((node.lineno, node.col_offset, SCS115))
+                    self._reported_calls.add(item.context_expr)
+
+        self.generic_visit(node)
+
+    visit_AsyncWith = visit_With  # ruff: ignore[mixed-case-variable-in-class-scope]
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Visitor method called for ast.Assign nodes."""

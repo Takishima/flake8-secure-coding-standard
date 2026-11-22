@@ -27,6 +27,7 @@
 # limitations under the License.
 
 
+import argparse
 import ast
 from itertools import starmap
 
@@ -38,8 +39,11 @@ import pytest
 
 
 def create_options_manager():
+    major = int(flake8.__version__.split('.', maxsplit=1)[0])
+    if major < 5:
+        return flake8.options.manager.OptionManager(prog='flake8', version='1.0')
     ctor_args = {'version': '1.0', 'plugin_versions': '', 'parents': []}
-    if int(flake8.__version__[0]) >= 6:
+    if major >= 6:
         ctor_args['formatter_names'] = []
     return flake8.options.manager.OptionManager(**ctor_args)
 
@@ -118,5 +122,29 @@ def test_read_octal_mode_option_invalid(arg):
 def test_os_allowed_mode(function, arg, allowed_modes):
     options = create_options_manager()
     flake8_scs.Plugin.add_options(options)
-    flake8_scs.Plugin.parse_options(options.parse_args([f'--os-{function}-mode={arg}']))
+    parsed = options.parse_args([f'--os-{function}-mode={arg}'])
+    if isinstance(parsed, tuple):  # flake8 < 5 returns (options, filenames)
+        parsed = parsed[0]
+    flake8_scs.Plugin.parse_options(parsed)
+    assert getattr(flake8_scs.Visitor, f'os_{function}_modes_allowed') == allowed_modes
+
+
+@pytest.mark.parametrize('function', ['open', 'mkdir', 'mkfifo', 'mknod'])
+@pytest.mark.parametrize(
+    ('arg', 'allowed_modes'),
+    [
+        (False, []),
+        ('n', []),
+        ('y', _default_modes),
+        ('0', []),
+        ('0o755', _default_modes),
+        ('0o644, 0o755,', [0o644, 0o755]),
+    ],
+    ids=_id_func,
+)
+def test_os_allowed_mode_from_config(function, arg, allowed_modes):
+    # flake8 hands over values read from a configuration file as raw strings
+    values = {f'os_{name}_mode': False for name in ('open', 'mkdir', 'mkfifo', 'mknod')}
+    values[f'os_{function}_mode'] = arg
+    flake8_scs.Plugin.parse_options(argparse.Namespace(**values))
     assert getattr(flake8_scs.Visitor, f'os_{function}_modes_allowed') == allowed_modes

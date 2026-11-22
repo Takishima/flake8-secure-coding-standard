@@ -692,6 +692,9 @@ class Plugin:  # pylint: disable=R0903
         """Parse command line options."""
 
         def _set_mode_option(name, modes):
+            if isinstance(modes, str):
+                # Values coming from a configuration file are not processed by the command line option actions
+                modes = _read_octal_mode_option(f'os_{name}_mode', modes, _DEFAULT_MAX_MODE)
             if isinstance(modes, int) and modes > 0:
                 setattr(Visitor, f'os_{name}_modes_allowed', list(range(modes + 1)))
                 setattr(Visitor, f'os_{name}_modes_msg_arg', f'0 < mode < {oct(modes)}')

@@ -54,7 +54,9 @@ def results(s):
 )
 def test_with_statement(prefix, s, expected):
     if prefix:
-        s = 'async def func():\n' + '\n'.join(f'    {prefix if not idx else ""}{line}' for idx, line in enumerate(s.split('\n')))
+        s = 'async def func():\n' + '\n'.join(
+            f'    {prefix if not idx else ""}{line}' for idx, line in enumerate(s.split('\n'))
+        )
     assert {r.split(': ', 1)[1] for r in results(s)} == {e.split(': ', 1)[1] for e in expected}
     if not prefix:
         assert results(s) == expected
